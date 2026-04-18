@@ -1,0 +1,107 @@
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border-std);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 0;
+  overflow-y: auto;
+}
+
+.logo {
+  padding: 0 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 16px;
+  letter-spacing: 0.2px;
+}
+
+.logoIcon {
+  color: var(--accent-blue);
+  margin-right: 4px;
+  font-size: 14px;
+}
+
+.logoAgent {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.logoDesk {
+  color: var(--text-primary);
+  font-weight: 300;
+}
+
+.sectionLabel {
+  padding: 0 20px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.agentList {
+  list-style: none;
+  flex: 1;
+}
+
+.agentItem {
+  padding: 10px 16px;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  transition: opacity 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.agentItem:hover:not(.active) {
+  opacity: 0.7;
+}
+
+.active {
+  background: var(--bg-elevated);
+  border-left-color: var(--accent-blue);
+}
+
+.agentName {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  color: var(--text-secondary);
+}
+
+.active .agentName {
+  color: var(--text-primary);
+}
+
+.agentDesc {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.4px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.sidebarFooter {
+  padding: 16px 20px 0;
+  border-top: 1px solid var(--border-std);
+  margin-top: 16px;
+}
+
+.settingsLink {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  transition: opacity 0.15s;
+}
+
+.settingsLink:hover {
+  opacity: 0.7;
+  color: var(--text-secondary);
+}

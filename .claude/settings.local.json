@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npx @nestjs/cli new agentdesk-mcp --package-manager npm --skip-git --skip-install)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(node -e ':*)",
+      "Bash(find \"d:\\\\Work\\\\AgentDesk\\\\FE\\\\src\" -type f \\\\\\( -name \"*.jsx\" -o -name \"*.js\" \\\\\\) -exec wc -l {} +)",
+      "Bash(ls -lh \"d:\\\\Work\\\\AgentDesk\\\\FE\\\\CODEBASE.\"*)",
+      "Bash(wc -l \"d:\\\\Work\\\\AgentDesk\\\\BE\\\\agentdesk-mcp\\\\src\"/**/*.ts)",
+      "Bash(ls -lh \"d:\\\\Work\\\\AgentDesk\\\\BE\\\\CODEBASE.\"*)",
+      "Bash(awk '{print $5, $9}')",
+      "Bash(cmd /c \"rename \\\\\"d:\\\\\\\\Work\\\\\\\\AgentDesk\\\\\" JiraPilot\")",
+      "Bash(powershell -Command \"Rename-Item -Path 'D:\\\\Work\\\\AgentDesk' -NewName 'JiraPilot'\")"
+    ]
+  }
+}

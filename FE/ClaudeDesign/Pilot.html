@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Pilot — AI agents for Jira</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/tokens.css"/>
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* Tweaks panel */
+  .tweaks-panel {
+    position: fixed;
+    bottom: 16px; right: 16px;
+    z-index: 70;
+    width: 280px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
+    overflow: hidden;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="components/data.jsx"></script>
+<script type="text/babel" src="components/icons.jsx"></script>
+<script type="text/babel" src="components/atoms.jsx"></script>
+<script type="text/babel" src="components/run-panel.jsx"></script>
+<script type="text/babel" src="components/direction-a.jsx"></script>
+<script type="text/babel" src="components/direction-b.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "direction": "A",
+  "theme": "light",
+  "density": "comfortable",
+  "accent": "teal"
+}/*EDITMODE-END*/;
+
+const ACCENT_MAP = {
+  teal:     { light: '#2e6f5e', dark: '#7fbfa8', soft_l: '#d9ebe3', soft_d: '#243530' },
+  terra:    { light: '#b65c2a', dark: '#d9986a', soft_l: '#f1e3d6', soft_d: '#3a2d22' },
+  indigo:   { light: '#4a5a8a', dark: '#a0b0d8', soft_l: '#dde2ee', soft_d: '#262a38' },
+  charcoal: { light: '#1c1c1c', dark: '#f4f1ea', soft_l: '#eceae4', soft_d: '#2e2c28' },
+};
+
+function applyTheme(theme, accent) {
+  const root = document.documentElement;
+  root.setAttribute('data-theme', theme);
+  const a = ACCENT_MAP[accent] || ACCENT_MAP.teal;
+  if (theme === 'light') {
+    root.style.setProperty('--brand', a.light);
+    root.style.setProperty('--brand-soft', a.soft_l);
+    root.style.setProperty('--brand-ink', '#f5faf7');
+  } else {
+    root.style.setProperty('--brand', a.dark);
+    root.style.setProperty('--brand-soft', a.soft_d);
+    root.style.setProperty('--brand-ink', '#0e1816');
+  }
+}
+
+function App() {
+  const [tweaks, setTweaks] = React.useState(() => {
+    try { return { ...TWEAK_DEFAULTS, ...JSON.parse(localStorage.getItem('pilot.tweaks') || '{}') }; }
+    catch { return TWEAK_DEFAULTS; }
+  });
+  const [tweaksVisible, setTweaksVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    applyTheme(tweaks.theme, tweaks.accent);
+    localStorage.setItem('pilot.tweaks', JSON.stringify(tweaks));
+  }, [tweaks]);
+
+  // Edit-mode protocol
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksVisible(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksVisible(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const patch = (k, v) => {
+    const next = { ...tweaks, [k]: v };
+    setTweaks(next);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, '*');
+  };
+
+  return (
+    <>
+      {tweaks.direction === 'A'
+        ? <DirectionA theme={tweaks.theme} density={tweaks.density} />
+        : <DirectionB theme={tweaks.theme} density={tweaks.density} />}
+
+      {tweaksVisible && <TweaksPanel tweaks={tweaks} onPatch={patch} />}
+    </>
+  );
+}
+
+function TweaksPanel({ tweaks, onPatch }) {
+  return (
+    <div className="tweaks-panel">
+      <div style={{
+        padding: '10px 14px',
+        borderBottom: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', gap: 8,
+        fontSize: 12, fontWeight: 600, letterSpacing: 0.02,
+      }}>
+        <span style={{ color: 'var(--brand)' }}><I.Sparkle size={13}/></span>
+        Tweaks
+        <span style={{ marginLeft: 'auto', fontSize: 10.5, color: 'var(--ink-60)', fontWeight: 500 }}>persistent</span>
+      </div>
+      <div style={{ padding: 14, display: 'grid', gap: 14 }}>
+        <TweakGroup label="Direction">
+          <SegmentedControl
+            size="sm"
+            value={tweaks.direction}
+            onChange={(v) => onPatch('direction', v)}
+            options={[
+              { value: 'A', label: 'A · Workspace' },
+              { value: 'B', label: 'B · Document' },
+            ]}
+          />
+          <div style={{ fontSize: 10.5, color: 'var(--ink-60)', marginTop: 6, lineHeight: 1.45 }}>
+            {tweaks.direction === 'A'
+              ? 'Three-pane tool: nav / agents / run panel. Dense, fast.'
+              : 'Document-first: agent picker, writing stage with composer dock. Focused.'}
+          </div>
+        </TweakGroup>
+
+        <TweakGroup label="Theme">
+          <SegmentedControl
+            size="sm"
+            value={tweaks.theme}
+            onChange={(v) => onPatch('theme', v)}
+            options={[
+              { value: 'light', label: 'Cream', icon: <I.Sun size={11}/> },
+              { value: 'dark', label: 'Ember', icon: <I.Moon size={11}/> },
+            ]}
+          />
+        </TweakGroup>
+
+        <TweakGroup label="Density">
+          <SegmentedControl
+            size="sm"
+            value={tweaks.density}
+            onChange={(v) => onPatch('density', v)}
+            options={[
+              { value: 'comfortable', label: 'Comfortable' },
+              { value: 'compact', label: 'Compact' },
+            ]}
+          />
+        </TweakGroup>
+
+        <TweakGroup label="Accent">
+          <div style={{ display: 'flex', gap: 6 }}>
+            {Object.entries(ACCENT_MAP).map(([k, v]) => (
+              <button key={k} onClick={() => onPatch('accent', k)} style={{
+                width: 30, height: 30, borderRadius: 'var(--r-sm)',
+                background: tweaks.theme === 'light' ? v.light : v.dark,
+                border: tweaks.accent === k
+                  ? '2px solid var(--ink)'
+                  : '1px solid var(--border)',
+                transition: 'transform var(--t-fast)',
+                transform: tweaks.accent === k ? 'scale(1.05)' : 'none',
+              }} title={k}/>
+            ))}
+          </div>
+        </TweakGroup>
+      </div>
+    </div>
+  );
+}
+
+function TweakGroup({ label, children }) {
+  return (
+    <div>
+      <div style={{
+        fontSize: 10.5, fontWeight: 600, letterSpacing: 0.08,
+        textTransform: 'uppercase', color: 'var(--ink-60)',
+        marginBottom: 6,
+      }}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+
+</body>
+</html>

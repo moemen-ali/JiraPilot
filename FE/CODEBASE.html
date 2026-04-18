@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgentDesk FE — Codebase Report</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f5f1ed;
+      color: #2c2c2c;
+      line-height: 1.6;
+    }
+
+    body {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ──────── Sidebar Navigation ──────── */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 240px;
+      height: 100vh;
+      background: linear-gradient(180deg, #fff9f5 0%, #f5ede4 100%);
+      border-right: 1px solid #e8dfd5;
+      overflow-y: auto;
+      padding: 24px 16px;
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      font-size: 18px;
+      font-weight: 700;
+      color: #2e6f5e;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e8dfd5;
+    }
+
+    .sidebar-nav {
+      list-style: none;
+    }
+
+    .sidebar-nav li {
+      margin-bottom: 8px;
+    }
+
+    .sidebar-nav a {
+      display: block;
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: #555;
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 120ms ease;
+      border-left: 3px solid transparent;
+    }
+
+    .sidebar-nav a:hover {
+      background-color: #ede3da;
+      color: #2e6f5e;
+      border-left-color: #2e6f5e;
+    }
+
+    .sidebar-nav a.active {
+      background-color: #d9ebe3;
+      color: #2e6f5e;
+      font-weight: 600;
+      border-left-color: #2e6f5e;
+    }
+
+    .sidebar-nav .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #999;
+      padding: 12px 12px 6px;
+      margin-top: 16px;
+      margin-bottom: 6px;
+    }
+
+    /* ──────── Main Content ──────── */
+    .main {
+      margin-left: 240px;
+      flex: 1;
+      padding: 32px 48px;
+      max-width: 1200px;
+    }
+
+    /* ──────── Header ──────── */
+    .header {
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid #e8dfd5;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      color: #1c1c1c;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .header .subtitle {
+      font-size: 14px;
+      color: #999;
+      margin-bottom: 16px;
+    }
+
+    .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      background-color: #d9ebe3;
+      color: #2e6f5e;
+      border: 1px solid #b0dcc8;
+    }
+
+    /* ──────── Sections ──────── */
+    section {
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      font-size: 24px;
+      color: #1c1c1c;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #ede3da;
+      letter-spacing: -0.3px;
+    }
+
+    h3 {
+      font-size: 16px;
+      color: #2c2c2c;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-weight: 600;
+      letter-spacing: -0.1px;
+    }
+
+    h4 {
+      font-size: 14px;
+      color: #555;
+      margin-top: 14px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    p {
+      margin-bottom: 12px;
+      line-height: 1.7;
+      color: #555;
+    }
+
+    /* ──────── Tables ──────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      background-color: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    th {
+      background-color: #f0ede4;
+      color: #2c2c2c;
+      font-weight: 600;
+      font-size: 13px;
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid #e8dfd5;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #ede3da;
+      font-size: 13px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover {
+      background-color: #faf7f3;
+    }
+
+    code {
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+      background-color: #f0ede4;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #c77d2a;
+    }
+
+    pre {
+      background-color: #1c1c1c;
+      color: #f4f1ea;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    /* ──────── Tree Structure ──────── */
+    .tree {
+      background-color: #fff;
+      border: 1px solid #e8dfd5;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.8;
+      color: #555;
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+
+    .tree-item {
+      margin-left: 20px;
+    }
+
+    .tree-folder::before {
+      content: '📁 ';
+      color: #b8860b;
+    }
+
+    .tree-file::before {
+      content: '📄 ';
+      color: #4a4a4a;
+    }
+
+    /* ──────── Details/Summary ──────── */
+    details {
+      margin-bottom: 12px;
+      background-color: #fff;
+      border: 1px solid #e8dfd5;
+      border-radius: 6px;
+      padding: 12px 16px;
+      cursor: pointer;
+    }
+
+    details[open] {
+      background-color: #faf7f3;
+    }
+
+    summary {
+      font-weight: 600;
+      color: #2e6f5e;
+      user-select: none;
+    }
+
+    summary:hover {
+      color: #1c5544;
+    }
+
+    details>* {
+      margin-top: 12px;
+      margin-bottom: 0;
+    }
+
+    details>p {
+      margin-top: 12px;
+      color: #666;
+    }
+
+    /* ──────── Lists ──────── */
+    ul,
+    ol {
+      margin-left: 24px;
+      margin-bottom: 12px;
+    }
+
+    li {
+      margin-bottom: 6px;
+      color: #555;
+    }
+
+    /* ──────── Highlights & Alerts ──────── */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      border-left: 4px solid;
+    }
+
+    .alert-note {
+      background-color: #e8f3f5;
+      border-left-color: #4a9ecc;
+      color: #1a4d5c;
+    }
+
+    .alert-warning {
+      background-color: #fef3e6;
+      border-left-color: #d9a85a;
+      color: #6b4a1a;
+    }
+
+    .alert-success {
+      background-color: #e8f5f0;
+      border-left-color: #2e6f5e;
+      color: #1a3f38;
+    }
+
+    /* ──────── Responsive ──────── */
+    @media (max-width: 900px) {
+      .sidebar {
+        width: 200px;
+      }
+
+      .main {
+        margin-left: 200px;
+        padding: 20px 32px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      body {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid #e8dfd5;
+        padding: 16px;
+      }
+
+      .main {
+        margin-left: 0;
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ──────── SIDEBAR ──────── -->
+  <nav class="sidebar">
+    <div class="sidebar-header">Codebase Index</div>
+    <ul class="sidebar-nav">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#tech-stack">Tech Stack</a></li>
+      <li><a href="#directory-structure">Directory Structure</a></li>
+      <li><a href="#framework">Framework Analysis</a></li>
+      <li><a href="#routes">Routes & Pages</a></li>
+      <li><a href="#components">Components</a></li>
+      <li><a href="#hooks">Hooks & Services</a></li>
+      <li><a href="#configuration">Configuration</a></li>
+      <li><a href="#testing">Testing</a></li>
+      <li><a href="#patterns">Notable Patterns</a></li>
+      <li><a href="#recommendations">Recommendations</a></li>
+    </ul>
+  </nav>
+
+  <!-- ──────── MAIN CONTENT ──────── -->
+  <main class="main">
+    <!-- Header -->
+    <div class="header">
+      <h1>AgentDesk FE</h1>
+      <p class="subtitle">Codebase Documentation & Architecture Report</p>
+      <div class="badges">
+        <span class="badge">Next.js 14.2</span>
+        <span class="badge">React 18</span>
+        <span class="badge">App Router</span>
+        <span class="badge">TypeScript-ready</span>
+        <span class="badge">v0.1.0</span>
+      </div>
+      <p style="margin-top: 12px; font-size: 12px; color: #999;">Generated: April 18, 2026</p>
+    </div>
+
+    <!-- Section 1: Overview -->
+    <section id="overview">
+      <h2>1. Project Overview</h2>
+      <p><strong>AgentDesk</strong> is a modern React frontend built with Next.js 14.2 for orchestrating AI agents. It
+        provides a sophisticated three-pane dashboard interface where users can:</p>
+      <ul>
+        <li>Browse and select from a curated list of AI agents</li>
+        <li>Fill in agent-specific input forms</li>
+        <li>Execute agents with real-time streaming output</li>
+        <li>Monitor tool execution (MCP calls) in real-time</li>
+        <li>Export agent output as formatted PDFs</li>
+        <li>Manage API credentials through a secure settings panel</li>
+      </ul>
+      <div class="alert alert-note">
+        <strong>Status:</strong> Active development. Bootstrap via create-next-app, utilizing Next.js App Router for
+        routing and React hooks for state management.
+      </div>
+
+      <h3>Key Facts</h3>
+      <table>
+        <tr>
+          <th>Property</th>
+          <th>Value</th>
+        </tr>
+        <tr>
+          <td>Project Version</td>
+          <td>0.1.0</td>
+        </tr>
+        <tr>
+          <td>Router Type</td>
+          <td>App Router (13.4+)</td>
+        </tr>
+        <tr>
+          <td>Total JSX/JS Files</td>
+          <td>14 files, ~2,000 LOC</td>
+        </tr>
+        <tr>
+          <td>Styling Approach</td>
+          <td>Inline React styles + CSS custom properties (tokens)</td>
+        </tr>
+        <tr>
+          <td>Theme Support</td>
+          <td>Light & Dark (runtime toggle, localStorage persist)</td>
+        </tr>
+        <tr>
+          <td>API Integration</td>
+          <td>Single MCP backend endpoint (POST /agents/run, SSE response)</td>
+        </tr>
+      </table>
+    </section>
+
+    <!-- Section 2: Tech Stack -->
+    <section id="tech-stack">
+      <h2>2. Tech Stack & Dependencies</h2>
+
+      <h3>Core Runtime</h3>
+      <table>
+        <tr>
+          <th>Package</th>
+          <th>Version</th>
+          <th>Purpose</th>
+        </tr>
+        <tr>
+          <td><code>next</code></td>
+          <td>14.2.35</td>
+          <td>Full-stack React framework, App Router, build system</td>
+        </tr>
+        <tr>
+          <td><code>react</code></td>
+          <td>^18</td>
+          <td>UI component library and hooks</td>
+        </tr>
+        <tr>
+          <td><code>react-dom</code></td>
+          <td>^18</td>
+          <td>React DOM rendering & hydration</td>
+        </tr>
+        <tr>
+          <td><code>@react-pdf/renderer</code></td>
+          <td>^4.4.1</td>
+          <td>Server-side PDF generation from React components</td>
+        </tr>
+        <tr>
+          <td><code>gray-matter</code></td>
+          <td>^4.0.3</td>
+          <td>Parse YAML/Markdown front-matter (agent metadata)</td>
+        </tr>
+        <tr>
+          <td><code>geist</code></td>
+          <td>^1.7.0</td>
+          <td><em>Installed but unused</em> (custom tokens used instead)</td>
+        </tr>
+        <tr>
+          <td><code>react-markdown</code></td>
+          <td>^10.1.0</td>
+          <td><em>Installed but unused</em> (custom inline renderer)</td>
+        </tr>
+      </table>
+
+      <h3>Build & Config</h3>
+      <ul>
+        <li><strong>Module System:</strong> ESM (via Next.js defaults)</li>
+        <li><strong>Config Files:</strong> jsconfig.json (path aliases), next.config.mjs (empty/defaults)</li>
+        <li><strong>Package Manager:</strong> npm with package-lock.json</li>
+        <li><strong>Linting:</strong> next lint (built-in Next.js ESLint)</li>
+        <li><strong>Fonts:</strong> Google Fonts via next/font (Inter, Instrument Serif, JetBrains Mono)</li>
+      </ul>
+
+      <div class="alert alert-warning">
+        <strong>Dead Dependencies:</strong> <code>geist</code> and <code>react-markdown</code> are installed but not
+        used. Consider removing if not planned for future use.
+      </div>
+    </section>
+
+    <!-- Section 3: Directory Structure -->
+    <section id="directory-structure">
+      <h2>3. Directory Structure</h2>
+
+      <div class="tree">
+        d:\Work\AgentDesk\FE/
+        ├── public/
+        │ └── agents/
+        │ ├── prd-generator.md
+        │ ├── release-notes.md
+        │ ├── sprint-summary.md
+        │ └── ticket-summary.md
+        ├── src/
+        │ ├── app/
+        │ │ ├── layout.jsx [RootLayout, fonts, metadata]
+        │ │ ├── page.jsx [Main Dashboard, 1200+ lines]
+        │ │ └── settings/
+        │ │ └── page.jsx [Settings page, scaffold]
+        │ ├── components/
+        │ │ ├── PdfExporter.jsx [React PDF document wrapper]
+        │ │ └── ui/
+        │ │ ├── Atoms.jsx [UI component library, 345 lines]
+        │ │ └── Icons.jsx [SVG icons, 71 lines]
+        │ ├── hooks/
+        │ │ ├── useAgentList.js [Load agent metadata]
+        │ │ ├── useAgentRunner.js [Execute agents + SSE]
+        │ │ └── usePdfExport.js [PDF download wrapper]
+        │ ├── lib/
+        │ │ ├── agentParser.js [Parse gray-matter YAML]
+        │ │ └── mcpClient.js [HTTP client + SSE reader]
+        │ └── styles/
+        │ └── globals.css [Design tokens + resets]
+        ├── .next/ [Build output]
+        ├── jsconfig.json [Path alias @/*]
+        ├── next.config.mjs [Empty config]
+        ├── package.json [Dependencies]
+        └── README.md [Bootstrap template]
+      </div>
+
+      <div class="alert alert-note">
+        <strong>Note:</strong> Three components mentioned in early exploration (InputForm, OutputPanel, AgentSelector)
+        are not present. All UI logic is contained within <code>page.jsx</code>.
+      </div>
+    </section>
+
+    <!-- Section 4: Framework Analysis -->
+    <section id="framework">
+      <h2>4. Framework Analysis</h2>
+
+      <h3>Next.js App Router</h3>
+      <ul>
+        <li><strong>Router Type:</strong> App Router (src/app directory structure)</li>
+        <li><strong>Config:</strong> next.config.mjs is empty (all defaults applied)</li>
+        <li><strong>Fonts:</strong> Loaded via next/font/google in RootLayout
+          <ul>
+            <li>Inter (300–700 weight, variable font)</li>
+            <li>Instrument Serif (400 weight, serif for PDFs)</li>
+            <li>JetBrains Mono (400–500 weight, monospace)</li>
+          </ul>
+        </li>
+        <li><strong>Metadata:</strong> Set at root: <code>title: 'Pilot'</code>,
+          <code>description: 'AI agents for your team'</code></li>
+        <li><strong>Theming:</strong> <code>data-theme="dark"</code> attribute on <code>&lt;html&gt;</code> element;
+          toggled at runtime</li>
+      </ul>
+
+      <h3>Client-Side Architecture</h3>
+      <p>The entire application is a <strong>Single-Page Application (SPA)</strong> after hydration. Key
+        characteristics:</p>
+      <ul>
+        <li>Marked with <code>'use client'</code> directive in page.jsx</li>
+        <li>All state managed via React hooks (no external store)</li>
+        <li>No server-side rendering or data fetching at page level</li>
+        <li>Credentials stored in browser localStorage</li>
+        <li>Backend calls via HTTP fetch (SSE for streaming)</li>
+      </ul>
+
+      <h3>Component Hierarchy</h3>
+      <details>
+        <summary>All Components in page.jsx (expand to view)</summary>
+        <pre>Home (root)
+├── NavAside
+│   ├── NavSection × 2 (Workspace, Team)
+│   │   └── NavItem × multiple
+│   └── User Profile Card
+├── Middle Pane
+│   ├── AgentsListPane (view='agents')
+│   │   └── AgentRow × N
+│   ├── RecentRunsPane (view='runs')
+│   └── SettingsNavPane (view='settings')
+├── Right Pane
+│   ├── RunPanel (view='agents'|'runs')
+│   │   ├── Input Form (agent.inputs)
+│   │   ├── Output Area
+│   │   │   ├── ToolCallRow × N
+│   │   │   ├── ErrorBox
+│   │   │   └── Markdown Renderer
+│   │   └── Connections Display
+│   └── SettingsBody (view='settings')
+├── PdfPreviewModal
+│   └── PdfMarkdown
+└── Toast
+        </pre>
+      </details>
+    </section>
+
+    <!-- Section 5: Routes & Pages -->
+    <section id="routes">
+      <h2>5. Routes & Pages</h2>
+
+      <table>
+        <tr>
+          <th>Path</th>
+          <th>Component</th>
+          <th>Type</th>
+          <th>Rendering</th>
+          <th>Status</th>
+        </tr>
+        <tr>
+          <td><code>/</code></td>
+          <td>page.jsx</td>
+          <td>App Router</td>
+          <td>Client-side SPA</td>
+          <td>✓ Active</td>
+        </tr>
+        <tr>
+          <td><code>/settings</code></td>
+          <td>settings/page.jsx</td>
+          <td>App Router</td>
+          <td>Not rendered</td>
+          <td>⚠ Scaffold</td>
+        </tr>
+      </table>
+
+      <h3>Home Page (<code>/</code>)</h3>
+      <p><strong>File:</strong> src/app/page.jsx (1,200+ lines, heavily commented)</p>
+      <p><strong>Purpose:</strong> Main dashboard with three-pane layout for agent orchestration</p>
+
+      <h4>Main UI Sections</h4>
+      <ul>
+        <li><strong>Left Pane (232px fixed):</strong> Navigation sidebar with logo, nav items, theme toggle, user card
+        </li>
+        <li><strong>Middle Pane (340px fixed):</strong> Agents list, recent runs, or settings nav (based on view state)
+        </li>
+        <li><strong>Right Pane (flex):</strong> Agent input form on left side, output on right side</li>
+        <li><strong>Overlays:</strong> PDF preview modal, toast notifications</li>
+      </ul>
+
+      <h4>State Management</h4>
+      <pre>const [activeId, setActiveId] = useState(null);           // Selected agent ID
+const [view, setView] = useState('agents');              // 'agents'|'runs'|'settings'
+const [inputs, setInputs] = useState({});                // Form input values
+const [pdfOpen, setPdfOpen] = useState(false);           // PDF modal visibility
+const [toast, setToast] = useState(null);               // Toast message
+const [theme, setTheme] = useState('dark');              // 'light'|'dark'
+const { agents, loading } = useAgentList();              // Loaded agents
+const { output, runState, tools, error, run, abort, reset } = useAgentRunner(); // Execution
+const { exportPdf } = usePdfExport();                    // PDF export
+      </pre>
+
+      <h4>Key Interactions</h4>
+      <ol>
+        <li><strong>Agent Selection:</strong> Click agent in middle list → updates <code>activeId</code> → resets
+          inputs/output</li>
+        <li><strong>Form Submission:</strong> Fill inputs → click "Run agent" → calls <code>useAgentRunner.run()</code>
+        </li>
+        <li><strong>Streaming Output:</strong> SSE stream from backend → accumulates <code>output</code> state</li>
+        <li><strong>PDF Export:</strong> On completion, auto-opens modal → user clicks "Download" → triggers
+          <code>exportPdf()</code></li>
+        <li><strong>Settings:</strong> Click "Settings" nav item → <code>SettingsBody</code> renders form → saves to
+          localStorage</li>
+        <li><strong>Theme Toggle:</strong> Click moon/sun icon → updates DOM + localStorage</li>
+      </ol>
+    </section>
+
+    <!-- Section 6: Components -->
+    <section id="components">
+      <h2>6. Components & UI Library</h2>
+
+      <h3>Atoms.jsx — Reusable Components</h3>
+      <p><strong>File:</strong> src/components/ui/Atoms.jsx (345 lines)</p>
+      <p>A lightweight component library with design tokens. All components use inline React styles (no CSS Modules).
+      </p>
+
+      <table>
+        <tr>
+          <th>Component</th>
+          <th>Key Props</th>
+          <th>Purpose</th>
+        </tr>
+        <tr>
+          <td><code>Button</code></td>
+          <td>variant, size, icon, disabled, loading</td>
+          <td>Primary, secondary, ghost, outline, danger variants</td>
+        </tr>
+        <tr>
+          <td><code>Spinner</code></td>
+          <td>size</td>
+          <td>Rotating border loader</td>
+        </tr>
+        <tr>
+          <td><code>IconBtn</code></td>
+          <td>children, active, title</td>
+          <td>Icon-only button with hover states</td>
+        </tr>
+        <tr>
+          <td><code>Badge</code></td>
+          <td>tone, children</td>
+          <td>Tag/label (neutral, pm, eng, data, release, ok, warn, err)</td>
+        </tr>
+        <tr>
+          <td><code>Kbd</code></td>
+          <td>children</td>
+          <td>Keyboard key visual</td>
+        </tr>
+        <tr>
+          <td><code>Input</code></td>
+          <td>Standard HTML + style</td>
+          <td>Text input with focus ring</td>
+        </tr>
+        <tr>
+          <td><code>Textarea</code></td>
+          <td>Standard HTML + style</td>
+          <td>Multi-line text input</td>
+        </tr>
+        <tr>
+          <td><code>Select</code></td>
+          <td>children (options), style</td>
+          <td>Dropdown with custom chevron</td>
+        </tr>
+        <tr>
+          <td><code>Label</code></td>
+          <td>children, htmlFor, hint</td>
+          <td>Form label with optional hint</td>
+        </tr>
+        <tr>
+          <td><code>Divider</code></td>
+          <td>vertical, style</td>
+          <td>Horizontal or vertical separator</td>
+        </tr>
+        <tr>
+          <td><code>Card</code></td>
+          <td>children, padding, raised</td>
+          <td>Container with border + background</td>
+        </tr>
+        <tr>
+          <td><code>SegmentedControl</code></td>
+          <td>options, value, onChange</td>
+          <td>Tab-like control</td>
+        </tr>
+        <tr>
+          <td><code>StatusDot</code></td>
+          <td>tone, pulse</td>
+          <td>Colored indicator (ok/warn/err) with optional pulse</td>
+        </tr>
+      </table>
+
+      <h3>Icons.jsx — Icon System</h3>
+      <p><strong>File:</strong> src/components/ui/Icons.jsx (71 lines)</p>
+      <p>Custom SVG icons exported as <code>I</code> object. 25+ icons, all use <code>currentColor</code> for theming
+        and 1.5px stroke width.</p>
+      <p><strong>Example Icons:</strong> Logo, Play, Stop, Grid, Clock, Users, Gear, Search, Check, Download, FileText,
+        FilePdf, Jira, Sparkle, Key, Link, Bolt, Copy, Refresh, Book, Warning, Moon, Sun, etc.</p>
+
+      <h3>PdfExporter.jsx</h3>
+      <p><strong>File:</strong> src/components/PdfExporter.jsx (32 lines)</p>
+      <p>Simple React component that wraps <code>@react-pdf/renderer</code>'s Document/Page/Text API. Used by
+        <code>usePdfExport()</code> hook to render agent output as PDF.</p>
+
+      <h3>Page-Level Components</h3>
+      <p>All major UI components (NavAside, RunPanel, SettingsBody, PdfPreviewModal, etc.) are defined inline in
+        <code>page.jsx</code>. Highlights:</p>
+      <ul>
+        <li><strong>Markdown ()</strong> — Custom inline Markdown renderer using regex; supports h1–h3, lists, bold,
+          italic, code, cursors</li>
+        <li><strong>PdfMarkdown ()</strong> — Serif-styled variant for PDF preview</li>
+        <li><strong>NavAside ()</strong> — Left sidebar with logo, nav sections, footer links</li>
+        <li><strong>RunPanel ()</strong> — Right pane with input form + output area</li>
+        <li><strong>SettingsBody ()</strong> — Form for storing API credentials in localStorage</li>
+        <li><strong>PdfPreviewModal ()</strong> — Fullscreen modal with A4 preview before download</li>
+      </ul>
+    </section>
+
+    <!-- Section 7: Hooks & Services -->
+    <section id="hooks">
+      <h2>7. Hooks & Services</h2>
+
+      <h3>Custom Hooks</h3>
+
+      <h4>useAgentList()</h4>
+      <p><strong>File:</strong> src/hooks/useAgentList.js</p>
+      <p><strong>Purpose:</strong> Load agent definitions from /public/agents/*.md files</p>
+      <pre>export function useAgentList() {
+  const [agents, setAgents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    // Fetches: release-notes, prd-generator, ticket-summary, sprint-summary
+    // Parses each with parseAgent(text, id)
+  }, []);
+
+  return { agents, loading, error };
+}</pre>
+      <p><strong>Agent Files:</strong> 4 hardcoded IDs fetched from /public/agents directory</p>
+
+      <h4>useAgentRunner()</h4>
+      <p><strong>File:</strong> src/hooks/useAgentRunner.js</p>
+      <p><strong>Purpose:</strong> Orchestrate agent execution with SSE streaming</p>
+      <ul>
+        <li>Reads credentials from localStorage (Jira token, OpenRouter key, MCP URL, model)</li>
+        <li>Calls backend POST /agents/run with agent ID + form values</li>
+        <li>Streams SSE events: content, tool_use, tool_result</li>
+        <li>Supports abort via AbortController</li>
+      </ul>
+      <p><strong>Returns:</strong> <code>{ output, runState, tools[], error, run(), abort(), reset() }</code></p>
+
+      <h4>usePdfExport()</h4>
+      <p><strong>File:</strong> src/hooks/usePdfExport.js</p>
+      <p><strong>Purpose:</strong> Wrap @react-pdf/renderer for PDF download</p>
+      <p>Takes markdown content + title → generates PDF blob → triggers browser download</p>
+
+      <h3>Utility Services</h3>
+
+      <h4>agentParser.js</h4>
+      <p><strong>File:</strong> src/lib/agentParser.js</p>
+      <p><strong>Function:</strong> <code>parseAgent(mdContent, id)</code></p>
+      <p>Parses Markdown files with YAML front-matter using gray-matter library.</p>
+      <p><strong>Front-matter keys:</strong> name, description, blurb, tone, toneLabel, est, lastRun, inputs (array)</p>
+      <p><strong>Returns:</strong> Agent object with metadata + markdown body as system prompt</p>
+
+      <h4>mcpClient.js</h4>
+      <p><strong>File:</strong> src/lib/mcpClient.js</p>
+      <p><strong>Functions:</strong></p>
+      <ul>
+        <li><code>runAgent(mcpBaseUrl, jiraToken, orKey, model, agentId, formValues)</code> — POST to backend, returns
+          Response with SSE stream</li>
+        <li><code>readSSEStream(response)</code> — Async generator that yields typed event objects</li>
+      </ul>
+      <p><strong>SSE Event Types:</strong></p>
+      <ul>
+        <li><code>{ type: 'content', text: string }</code></li>
+        <li><code>{ type: 'tool_use', id, name, input }</code></li>
+        <li><code>{ type: 'tool_result', tool_use_id }</code></li>
+      </ul>
+    </section>
+
+    <!-- Section 8: Configuration -->
+    <section id="configuration">
+      <h2>8. Configuration & Environment</h2>
+
+      <h3>Environment Variables (localStorage)</h3>
+      <p>All credentials are stored in browser localStorage (no backend .env file).</p>
+      <table>
+        <tr>
+          <th>Key</th>
+          <th>Example</th>
+          <th>Used By</th>
+          <th>Required</th>
+        </tr>
+        <tr>
+          <td><code>AGENTDESK_OPENROUTER_KEY</code></td>
+          <td>sk-...</td>
+          <td>useAgentRunner (API inference)</td>
+          <td>✓ Yes</td>
+        </tr>
+        <tr>
+          <td><code>AGENTDESK_JIRA_TOKEN</code></td>
+          <td>...</td>
+          <td>useAgentRunner (auth header)</td>
+          <td>✓ Yes</td>
+        </tr>
+        <tr>
+          <td><code>AGENTDESK_MCP_URL</code></td>
+          <td>http://localhost:3001</td>
+          <td>useAgentRunner (backend URL)</td>
+          <td>✓ Yes</td>
+        </tr>
+        <tr>
+          <td><code>AGENTDESK_JIRA_URL</code></td>
+          <td>https://org.atlassian.net</td>
+          <td>Settings UI (display only)</td>
+          <td>Optional</td>
+        </tr>
+        <tr>
+          <td><code>AGENTDESK_MODEL</code></td>
+          <td>qwen/qwen3-coder:free-5</td>
+          <td>useAgentRunner (default)</td>
+          <td>Optional</td>
+        </tr>
+        <tr>
+          <td><code>PILOT_THEME</code></td>
+          <td>'light' or 'dark'</td>
+          <td>Home page (theme state)</td>
+          <td>Optional</td>
+        </tr>
+      </table>
+
+      <div class="alert alert-warning">
+        <strong>Security Note:</strong> API credentials stored in browser localStorage are visible in DevTools. This is
+        acceptable for small, trusted teams but keys should be rotated if machines leave the organization.
+      </div>
+
+      <h3>Design Tokens (globals.css)</h3>
+
+      <h4>Light Theme (data-theme="light")</h4>
+      <pre>--bg: #f7f4ed
+--bg-raised: #fcfbf8
+--bg-sunken: #f0ede4
+--ink: #1c1c1c (text)
+--brand: #2e6f5e (sage green)</pre>
+
+      <h4>Dark Theme (data-theme="dark")</h4>
+      <pre>--bg: #1a1917
+--bg-raised: #22211e
+--bg-sunken: #141412
+--ink: #f4f1ea (light text)
+--brand: #7fbfa8 (lighter sage)</pre>
+
+      <h4>Agent-Specific Colors</h4>
+      <table>
+        <tr>
+          <th>Role</th>
+          <th>Light Color</th>
+          <th>Dark Color</th>
+        </tr>
+        <tr>
+          <td>PM</td>
+          <td>#b65c2a (brown)</td>
+          <td>#d9986a</td>
+        </tr>
+        <tr>
+          <td>Eng</td>
+          <td>#5d6a3c (olive)</td>
+          <td>#b4c085</td>
+        </tr>
+        <tr>
+          <td>Data</td>
+          <td>#4a5a8a (blue)</td>
+          <td>#a0b0d8</td>
+        </tr>
+        <tr>
+          <td>Release</td>
+          <td>#8a5a3c (tan)</td>
+          <td>#c9a47f</td>
+        </tr>
+      </table>
+
+      <h3>Font Setup</h3>
+      <p><strong>Google Fonts loaded in layout.jsx:</strong></p>
+      <ul>
+        <li>Inter (variable: 300–700 weight)</li>
+        <li>Instrument Serif (400 weight, used in PDFs)</li>
+        <li>JetBrains Mono (400–500 weight, monospace)</li>
+      </ul>
+
+      <h3>CSS Custom Properties</h3>
+      <p><strong>Spacing & Sizing:</strong> --r-sm (6px), --r-md (8px), --r-lg (12px), --r-pill (9999px)</p>
+      <p><strong>Transitions:</strong> --t-fast (120ms), --t-med (220ms), --ease (cubic-bezier)</p>
+      <p><strong>Shadows:</strong> --shadow-inset, --shadow-focus, --shadow-card</p>
+    </section>
+
+    <!-- Section 9: Testing -->
+    <section id="testing">
+      <h2>9. Testing Setup</h2>
+
+      <div class="alert alert-warning">
+        <strong>Current Status:</strong> No tests present.
+      </div>
+
+      <ul>
+        <li>No Jest configuration</li>
+        <li>No test runners (Vitest, Cypress, Playwright)</li>
+        <li>No .test.js, .spec.js files</li>
+        <li>No testing-library or supertest dependencies</li>
+      </ul>
+
+      <h3>Recommendation</h3>
+      <p>Testing infrastructure should be added before expanding the feature set. Priority areas:</p>
+      <ol>
+        <li>Unit tests for hooks (useAgentRunner, useAgentList, usePdfExport)</li>
+        <li>Integration tests for agent execution flow</li>
+        <li>E2E tests for user workflows (select agent → run → export PDF)</li>
+      </ol>
+    </section>
+
+    <!-- Section 10: Notable Patterns -->
+    <section id="patterns">
+      <h2>10. Notable Patterns & Observations</h2>
+
+      <h3>Architecture Patterns</h3>
+      <ul>
+        <li><strong>Monolithic Page:</strong> All UI logic lives in <code>/app/page.jsx</code> (1,200+ lines). No
+          component extraction despite size.</li>
+        <li><strong>Client-Only SPA:</strong> Entire app runs client-side; no SSR or server-side data fetching.</li>
+        <li><strong>Streaming Execution:</strong> Backend integration uses Server-Sent Events (SSE) for real-time agent
+          output.</li>
+        <li><strong>Dependency-Free Components:</strong> Custom Markdown renderer and icon SVGs reduce external
+          dependencies.</li>
+      </ul>
+
+      <h3>State Management</h3>
+      <ul>
+        <li>React hooks only (useState, useRef, useCallback, useEffect)</li>
+        <li>No Redux, Zustand, or context API</li>
+        <li>State is local to Home component; hooks encapsulate execution logic</li>
+      </ul>
+
+      <h3>Styling Approach</h3>
+      <ul>
+        <li>All inline React <code>style={}</code> objects with CSS custom properties</li>
+        <li>No CSS Modules, no build-time CSS-in-JS (Styled Components, Emotion)</li>
+        <li>No Tailwind CSS (despite geist dependency)</li>
+        <li>Theme toggle via runtime DOM attribute change + localStorage</li>
+      </ul>
+
+      <h3>API Integration</h3>
+      <ul>
+        <li>Single backend endpoint: POST <code>/agents/run</code> (SSE response)</li>
+        <li>No REST CRUD operations</li>
+        <li>Credentials passed as HTTP headers (X-Jira-Token, X-OpenRouter-Key, X-Model)</li>
+      </ul>
+
+      <h3>Form Handling</h3>
+      <ul>
+        <li>Manual state (inputs object) instead of react-hook-form</li>
+        <li>No validation framework</li>
+        <li>Reset via seed object from agent metadata</li>
+      </ul>
+
+      <h3>Unused/Dead Code</h3>
+      <ul>
+        <li><code>geist</code> dependency: installed but not used (custom tokens override)</li>
+        <li><code>react-markdown</code> dependency: installed but custom renderer used</li>
+        <li>Three components listed in file structure don't exist (InputForm, OutputPanel, AgentSelector)</li>
+        <li>RECENT_RUNS mock data: hardcoded, never updated</li>
+        <li><code>/settings</code> page: scaffold, not fully integrated</li>
+      </ul>
+
+      <h3>Performance</h3>
+      <ul>
+        <li><strong>Layout:</strong> CSS Grid (3-pane) is efficient</li>
+        <li><strong>List Rendering:</strong> Agent list is small (4 items), no virtualization needed</li>
+        <li><strong>Bundle Size:</strong> Custom components + minimal dependencies help keep bundle lean</li>
+        <li><strong>Markdown:</strong> Inline regex-based parser is lightweight but has limited feature set</li>
+      </ul>
+    </section>
+
+    <!-- Section 11: Recommendations -->
+    <section id="recommendations">
+      <h2>11. Recommendations</h2>
+
+      <h3>High Priority</h3>
+      <ol>
+        <li>
+          <strong>Refactor page.jsx:</strong> Extract components into separate files
+          <ul>
+            <li>components/NavAside.jsx</li>
+            <li>components/RunPanel.jsx</li>
+            <li>components/PdfPreviewModal.jsx</li>
+            <li>components/SettingsBody.jsx</li>
+          </ul>
+          <p>This will improve maintainability and enable code reuse.</p>
+        </li>
+        <li>
+          <strong>Add test suite:</strong> Unit tests for hooks, integration tests for agent execution
+          <ul>
+            <li>Jest + React Testing Library setup</li>
+            <li>Focus on useAgentRunner, useAgentList, mcpClient</li>
+            <li>E2E tests with Playwright or Cypress for full workflows</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Implement settings page:</strong> /settings is currently a scaffold
+          <ul>
+            <li>Fully integrate with root Home state or create standalone context</li>
+            <li>Add form validation for API keys</li>
+            <li>Show connection status indicators</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Secure credentials:</strong> Move from localStorage to backend
+          <ul>
+            <li>Implement OAuth or session-based auth</li>
+            <li>Encrypt sensitive keys server-side</li>
+            <li>Remove plaintext secrets from browser</li>
+          </ul>
+        </li>
+      </ol>
+
+      <h3>Medium Priority</h3>
+      <ol>
+        <li><strong>Clean up dependencies:</strong> Remove unused packages (geist, react-markdown) or document rationale
+        </li>
+        <li><strong>Enhance Markdown parser:</strong> Support blockquotes, code blocks with syntax highlighting, links,
+          images</li>
+        <li><strong>Error boundaries:</strong> Wrap components in React Error Boundaries for graceful error handling
+        </li>
+        <li><strong>Accessibility:</strong> Add ARIA labels, keyboard navigation, focus management</li>
+        <li><strong>Loading states:</strong> Improve UX during agent load, form submission</li>
+      </ol>
+
+      <h3>Low Priority</h3>
+      <ol>
+        <li><strong>PWA support:</strong> Add manifest.json and service worker for offline capability</li>
+        <li><strong>Internationalization:</strong> Integrate i18n if expanding to multiple languages</li>
+        <li><strong>Analytics:</strong> Add event tracking (agent runs, errors, theme toggles) for product insights</li>
+        <li><strong>Mobile responsiveness:</strong> Optimize layout for tablet/mobile screens</li>
+      </ol>
+
+      <div class="alert alert-success">
+        <strong>Summary:</strong> AgentDesk FE is a focused, well-commented prototype. Its main strengths are simplicity
+        and speed. Key growth areas are component modularity, test coverage, and security. The codebase is suitable for
+        small-team adoption but refactoring is recommended before scaling.
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <div style="margin-top: 48px; padding-top: 24px; border-top: 2px solid #e8dfd5; font-size: 12px; color: #999;">
+      <p><strong>Report Generated:</strong> April 18, 2026</p>
+      <p><strong>Project Root:</strong> d:\Work\AgentDesk\FE</p>
+      <p><strong>Total Source Files:</strong> 14 JSX/JS files, ~2,000 lines of code</p>
+      <p style="margin-top: 12px;"><em>This report was automatically generated via codebase analysis.</em></p>
+    </div>
+
+  </main>
+</body>
+
+</html>

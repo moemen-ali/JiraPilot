@@ -1,0 +1,33 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-void);
+}
+
+.main {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  padding: 48px 56px;
+  max-width: calc(var(--sidebar-width) + 680px + 112px);
+}
+
+.heading {
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  color: var(--text-primary);
+}
+
+.description {
+  font-size: 16px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg-void);
+}

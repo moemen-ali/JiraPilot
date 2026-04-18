@@ -1,0 +1,22 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 32px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.missingKeys {
+  color: var(--accent-red);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.missingKeys a {
+  color: var(--accent-blue);
+  text-decoration: underline;
+}
