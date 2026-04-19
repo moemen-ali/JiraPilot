@@ -1,348 +1,311 @@
-# AgentDesk FE — Codebase Report
-_Generated: 2026-04-18_
+# JiraPilot Frontend — Codebase Report
+_Generated: 2026-04-20_
 
 ## 1. Project Overview
 
-**AgentDesk** is a Next.js 14.2 frontend application for orchestrating AI agents. It provides a three-pane layout for agent selection, recent run history, settings management, and execution of agents with real-time streaming output and PDF export capabilities.
+**JiraPilot** is a Next.js 14 frontend for an AI-powered agent orchestration platform. It provides a desktop-like interface for running pre-built "agents" that fetch Jira data, process it with LLMs (via OpenRouter), and generate structured documents (bug reports, sprint summaries, PRD proposals, etc.). The frontend communicates with a NestJS backend MCP server and stores all credentials and configuration locally in browser localStorage.
 
-- **Version**: 0.1.0
-- **Status**: Active development (bootstrap via create-next-app)
-- **Router Type**: Next.js App Router (13.4+)
-- **Styling**: Custom CSS with design tokens (light + dark theme support)
-- **Client Framework**: React 18, JSX components (100% client-side after initial load)
+- **Framework**: Next.js 14.2.35 (App Router)
+- **UI Approach**: Client-side React components with CSS Modules + inline CSS-in-JS
+- **State Management**: React hooks (useState, useCallback, useEffect, useRef) + localStorage
+- **Key Features**: Multi-agent dashboard, real-time SSE streaming, PDF export, connection testing, workspace/sprint dropdowns, addon toggles, run history, theme toggle
 
 ## 2. Tech Stack & Dependencies
 
 ### Core Dependencies
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `next` | 14.2.35 | Full-stack React framework with App Router |
-| `react` | ^18 | UI component library |
-| `react-dom` | ^18 | React DOM rendering |
-| `@react-pdf/renderer` | ^4.4.1 | Server-side PDF generation from React components |
-| `geist` | ^1.7.0 | Vercel's design system (installed but not heavily used; custom tokens take precedence) |
-| `gray-matter` | ^4.0.3 | YAML/Markdown front-matter parser (for agent metadata) |
-| `react-markdown` | ^10.1.0 | Client-side Markdown rendering (unused; custom renderer in use) |
+- **next** `14.2.35` — React framework with App Router
+- **react** `^18` — UI library
+- **react-dom** `^18` — DOM rendering
+- **geist** `^1.7.0` — Geist Design System (UI primitives & icons)
+- **react-markdown** `^10.1.0` — Markdown rendering
+- **@react-pdf/renderer** `^4.4.1` — PDF generation
+- **gray-matter** `^4.0.3` — YAML frontmatter parsing
 
-### Build & Configuration
-- **Module system**: ESM (next.config.mjs, package.json type: module via Next.js defaults)
-- **JS config**: jsconfig.json with path alias `@/*` → `./src/*`
-- **Package manager**: npm (package-lock.json present)
-- **Linting**: next lint (Next.js built-in ESLint config)
-
-### Unused/Minimal Dependencies
-- `geist`: Imported in layout but not referenced in components (custom design tokens used instead)
-- `react-markdown`: Installed but unused (custom Markdown renderer built inline in page.jsx)
+### Build & Development
+- npm scripts: `dev`, `build`, `start`, `lint`
+- TypeScript via Next.js defaults
+- ESLint
 
 ## 3. Directory Structure
 
 ```
-d:\Work\AgentDesk\FE/
-├── public/
-│   └── agents/                    # Markdown definitions for agent metadata + prompts
-│       ├── prd-generator.md
-│       ├── release-notes.md
-│       ├── sprint-summary.md
-│       └── ticket-summary.md
-│
+FE/
 ├── src/
 │   ├── app/
-│   │   ├── layout.jsx             # RootLayout with global fonts, metadata, theming
-│   │   ├── page.jsx               # Main dashboard (HOME), 1200+ lines, core UI
-│   │   └── settings/
-│   │       └── page.jsx           # Settings page (currently unused, scaffold)
-│   │
+│   │   ├── layout.jsx             # Root layout with Google fonts
+│   │   ├── page.jsx               # Main dashboard (3-column layout, ~1455 lines)
+│   │   ├── settings/page.jsx      # Redirect to Settings
+│   │   └── page.module.css
 │   ├── components/
-│   │   ├── PdfExporter.jsx        # React PDF document wrapper
-│   │   ├── InputForm.jsx          # (listed but not found in codebase)
-│   │   ├── OutputPanel.jsx        # (listed but not found in codebase)
-│   │   ├── AgentSelector.jsx      # (listed but not found in codebase)
-│   │   └── ui/
-│   │       ├── Atoms.jsx          # 345-line component library (Button, Input, Badge, etc.)
-│   │       └── Icons.jsx          # 71-line SVG icon set (I.Logo, I.Grid, I.Play, etc.)
-│   │
+│   │   ├── ui/
+│   │   │   ├── Atoms.jsx          # Button, Input, Badge, etc.
+│   │   │   └── Icons.jsx          # Geist icons
+│   │   └── [legacy components]    # AgentSelector, InputForm, OutputPanel, PdfExporter (unused)
 │   ├── hooks/
-│   │   ├── useAgentList.js        # Loads agent .md files from /public/agents
-│   │   ├── useAgentRunner.js      # Orchestrates agent execution + SSE streaming
-│   │   └── usePdfExport.js        # Triggers PDF download via @react-pdf/renderer
-│   │
+│   │   ├── useAgentList.js
+│   │   ├── useAgentRunner.js
+│   │   ├── useRunHistory.js
+│   │   └── usePdfExport.js
 │   ├── lib/
-│   │   ├── agentParser.js         # Parses gray-matter YAML → agent object
-│   │   └── mcpClient.js           # HTTP client for MCP backend + SSE reader
-│   │
+│   │   ├── mcpClient.js           # Backend API client
+│   │   └── agentParser.js         # gray-matter parser (unused in page.jsx)
 │   └── styles/
-│       └── globals.css            # Design tokens + CSS resets (light + dark themes)
-│
-├── .next/                         # Build output (Next.js cache)
-├── .gitignore
-├── jsconfig.json                  # Path alias config
-├── next.config.mjs                # Empty Next.js config
-├── package.json                   # Dependencies + scripts
-├── package-lock.json
-└── README.md                      # Bootstrap template (minimal)
+│       └── globals.css
+├── public/
+│   └── agents/                    # Static agent markdown files (not used by app)
+├── next.config.mjs
+├── package.json
+└── tsconfig.json
 ```
 
-**Note:** Three components listed in file discovery (InputForm, OutputPanel, AgentSelector) do not exist in the codebase; they may have been planned but are not implemented. All logic is contained in `page.jsx`.
+## 4. Framework Analysis: Next.js 14 (App Router)
 
-## 4. Framework Analysis
+### Routing & Pages
+- **app/page.jsx** — Main dashboard. Single large client component (~1455 lines) containing all UI components.
+- **app/settings/page.jsx** — Redirects to Settings view in main page.
+- **app/layout.jsx** — Root layout with Google Fonts, metadata, CSS variables.
 
-### Next.js Configuration
-- **App Router**: Yes (src/app/ directory structure)
-- **Pages Router**: No
-- **Static Config**: next.config.mjs is empty (defaults applied)
-- **Fonts**: Google Fonts loaded in RootLayout
-  - `Inter` (300–700 weight, variable)
-  - `Instrument_Serif` (400 weight, variable)
-  - `JetBrains_Mono` (400–500 weight, variable)
-- **Metadata**: Set at root level (`title: 'Pilot'`, `description: 'AI agents for your team'`)
-- **Theme Attribute**: `data-theme="dark"` set on `<html>` element; toggled at runtime via localStorage
+### Rendering Strategy
+- **CSR (Client-Side Rendering)**: All pages marked with `'use client'`. No SSR or SSG.
+- **No API Routes**: Backend communication via fetch() to external NestJS MCP server URL.
 
-### Routes
-| Path | Component | Type | Rendering | Purpose |
-|------|-----------|------|-----------|---------|
-| `/` | `page.jsx` | App Router | **Client-side** (marked 'use client') | Main dashboard: 3-pane layout, agent selection, execution |
-| `/settings` | `settings/page.jsx` | App Router | Not implemented (scaffold) | Placeholder for future settings UI |
-
-### Client-Side Architecture
-All interactive state lives in the client (React hooks). The app is a **single-page application (SPA)** post-hydration.
-
-**Key Client Components (all in `/app/page.jsx`):**
-- `Home()` — root/orchestrator (agents list, selected agent, view mode)
-- `NavAside()` — left sidebar (nav sections, theme toggle, user profile)
-- `AgentsListPane()` — middle: agent list with search
-- `RecentRunsPane()` — middle: recent run history (mock data)
-- `SettingsNavPane()` — middle nav for settings
-- `RunPanel()` — right: agent inputs, output, tools execution log
-- `PdfPreviewModal()` — fullscreen modal for PDF preview before download
-- `Markdown()` / `PdfMarkdown()` — custom inline Markdown renderer (no external deps)
-- Helper components: `NavSection`, `NavItem`, `AgentRow`, `RunStatus`, `ToolCallRow`, `ConnectionRow`, `EmptyOutput`, `Toast`
-
-### Styling Approach
-1. **Design Tokens** (CSS custom properties):
-   - Defined in `globals.css` with `:root[data-theme="light"]` and `:root[data-theme="dark"]` selectors
-   - Warm, accessible palette (greens, browns, tans)
-   - Color stops: `--bg`, `--ink`, `--border`, `--brand`, `--ok`, `--warn`, `--err`
-   - Agent-specific colors: `--agent-pm`, `--agent-eng`, `--agent-data`, `--agent-release` (with backgrounds)
-2. **Inline Styles**: All component styling via React `style={}` objects (no CSS Modules or Tailwind)
-3. **Theme Toggle**: Stored in `localStorage` as `PILOT_THEME` ('light' or 'dark')
-4. **Animations**: CSS keyframes (fade-in, spin, pulse, blink) defined in globals.css
-5. **Responsive**: CSS Grid for layout (3 panes with fixed widths: 232px | 340px | 1fr)
-
-## 5. Key Modules / Pages / Routes
-
-### `/` (Home / Dashboard)
-**File:** `src/app/page.jsx` (1200+ lines, heavily commented)
-
-**State Management:**
-```javascript
-const [activeId, setActiveId] = useState(null);           // Selected agent ID
-const [view, setView] = useState('agents');              // 'agents'|'runs'|'settings'
-const [inputs, setInputs] = useState({});                // Form inputs for agent
-const [pdfOpen, setPdfOpen] = useState(false);           // PDF modal state
-const [toast, setToast] = useState(null);               // Toast notification
-const [theme, setTheme] = useState('dark');              // Theme toggle
-const { agents, loading } = useAgentList();              // Loaded agent list
-const { output, runState, tools, error, run, abort, reset } = useAgentRunner(); // Execution state
-const { exportPdf } = usePdfExport();                    // PDF export handler
-```
-
-**Key Interactions:**
-1. **Agent Selection**: Click agent in middle pane → sets `activeId` → resets inputs/output
-2. **Run Agent**: Fill inputs → click "Run agent" → `useAgentRunner.run()` → SSE stream
-3. **PDF Export**: On completion, auto-open modal → user downloads
-4. **Settings**: Click "Settings" in nav → `SettingsBody` renders connection form with localStorage persistence
-5. **Theme Toggle**: Click moon/sun icon → update DOM + localStorage
-
-**Mock Data:**
-- `RECENT_RUNS`: 6 hardcoded run history items (unused in production)
-- `SETTINGS_FIELDS`: Connection form schema (5 fields: OpenRouter key, Jira token, MCP URL, etc.)
-
-### UI Component Library (`ui/Atoms.jsx` + `ui/Icons.jsx`)
-
-**Atoms.jsx (345 lines):**
-| Component | Props | Notes |
-|-----------|-------|-------|
-| `Button` | variant, size, icon, children, disabled, loading | Supports 'primary', 'brand', 'default', 'ghost', 'outline', 'danger' |
-| `Spinner` | size | Rotating border animation |
-| `IconBtn` | children, active, title, onMouseEnter, onMouseLeave | Icon-only button with hover states |
-| `Badge` | tone, children | Tones: neutral, pm, eng, data, release, ok, warn, err |
-| `Kbd` | children | Keyboard key visual (e.g., `<Kbd>⌘</Kbd>`) |
-| `Input` | standard HTML input props + style | Focus ring with design token color |
-| `Textarea` | standard HTML textarea props + style | Focus ring, resizable |
-| `Select` | children (options), style | Custom chevron SVG dropdown |
-| `Label` | children, htmlFor, hint | Optional hint text on right |
-| `Divider` | vertical, style | Horizontal or vertical line |
-| `Card` | children, padding, raised, style | Raised or flat card background |
-| `SegmentedControl` | options, value, onChange, size | Tab-like control |
-| `StatusDot` | tone, pulse | Colored dot (ok/warn/err) with optional pulse animation |
-
-**Icons.jsx (71 lines):**
-- Custom SVG icon factory `Icon()` component with 16px grid, 1.5 stroke width
-- Exported as `I` object with 25+ icons: Logo, Play, Stop, Grid, Clock, Users, Gear, Search, Check, Download, FileText, FilePdf, Jira, Sparkle, Key, Link, Bolt, Copy, Refresh, Book, Warning, Moon, Sun, etc.
-- All icons use `currentColor` for theming
-
-## 6. Components & Services Inventory
-
-### Hooks (Custom)
-
-**`useAgentList()`** (`src/hooks/useAgentList.js`)
-- Fetches agent definitions from `/public/agents/*.md` on mount
-- Parses each file with `parseAgent()` (gray-matter + content)
-- Returns: `{ agents, loading, error }`
-- Agent files: 4 hardcoded IDs (release-notes, prd-generator, ticket-summary, sprint-summary)
-
-**`useAgentRunner()`** (`src/hooks/useAgentRunner.js`)
-- Orchestrates execution of an agent against backend MCP server
-- Reads credentials from localStorage (Jira token, OpenRouter key, MCP URL, model name)
-- Calls `mcpClient.runAgent()` → SSE response
-- Streams events: `content` (text chunks), `tool_use` (MCP call), `tool_result` (completion)
-- Returns: `{ output, runState ('idle'|'running'|'done'), tools[], error, run(), abort(), reset() }`
-- AbortController used for cancellation
-
-**`usePdfExport()`** (`src/hooks/usePdfExport.js`)
-- Wraps `@react-pdf/renderer` API
-- Takes markdown content + title → generates PDF blob → triggers download
-- Uses `ReactPdfDocument` component for rendering
-
-### Services (Utilities)
-
-**`agentParser.js`** (`src/lib/agentParser.js`)
-- Exports `parseAgent(mdContent, id)`
-- Uses `gray-matter` to extract YAML front-matter from `.md` files
-- Front-matter keys: `name`, `description`, `blurb`, `tone`, `toneLabel`, `est`, `lastRun`, `inputs` (array)
-- Returns agent object with parsed metadata + markdown body as system prompt
-
-**`mcpClient.js`** (`src/lib/mcpClient.js`)
-- Exports `runAgent(mcpBaseUrl, jiraToken, orKey, model, agentId, formValues)`
-  - POSTs to `{mcpBaseUrl}/agents/run`
-  - Headers: X-Jira-Token, X-OpenRouter-Key, X-Model
-  - Body: `{ agentId, formValues }`
-  - Returns Response object with SSE stream
-- Exports `readSSEStream(response)` async generator
-  - Parses `data: ` prefixed JSON lines
-  - Yields: `{ type, text/id/name/input/... }`
-  - Stops on `[DONE]` marker
-
-## 7. Configuration & Environment
-
-### Environment Variables
-All credentials stored in **browser localStorage** (no backend .env):
-| Key | Example | Used By |
-|-----|---------|---------|
-| `AGENTDESK_OPENROUTER_KEY` | sk-... | useAgentRunner (API inference) |
-| `AGENTDESK_JIRA_TOKEN` | ... | useAgentRunner (auth header) |
-| `AGENTDESK_MCP_URL` | http://localhost:3001 | useAgentRunner (backend URL) |
-| `AGENTDESK_JIRA_URL` | https://yourorg.atlassian.net | Settings UI (unused in execution) |
-| `AGENTDESK_MODEL` | qwen/qwen3-coder:free-5 | useAgentRunner (default model) |
-
-**Theme Preference:**
-| Key | Values | Location |
-|-----|--------|----------|
-| `PILOT_THEME` | 'light' or 'dark' | localStorage, synced to `document.documentElement.dataset.theme` |
-
-### Files
-- `jsconfig.json`: Path alias `@/*` → `./src/*` for imports
-- `next.config.mjs`: Empty (all defaults)
-- `.gitignore`: Standard Next.js template
-
-### Design Tokens (globals.css)
-
-**Light Theme** (`data-theme="light"`):
-- `--bg: #f7f4ed`, `--bg-raised: #fcfbf8`, `--bg-sunken: #f0ede4`
-- `--ink: #1c1c1c` (text), `--ink-60: rgba(..., 0.60)` (secondary)
-- `--brand: #2e6f5e` (sage green), `--brand-soft: #d9ebe3`
-- Agent colors: PM (brown #b65c2a), Eng (olive #5d6a3c), Data (blue #4a5a8a), Release (tan #8a5a3c)
-
-**Dark Theme** (`data-theme="dark"`):
-- `--bg: #1a1917`, `--bg-raised: #22211e`, `--bg-sunken: #141412`
-- `--ink: #f4f1ea` (light text), `--ink-60: rgba(..., 0.62)`
-- `--brand: #7fbfa8` (lighter sage), `--brand-soft: #243530`
-- Agent colors: Adjusted for dark (lighter, desaturated)
-
-**Shared:**
-- Radii: `--r-sm: 6px`, `--r-md: 8px`, `--r-lg: 12px`, `--r-pill: 9999px`
-- Transitions: `--t-fast: 120ms`, `--t-med: 220ms`, `--ease: cubic-bezier(0.2, 0.7, 0.2, 1)`
-- Shadows: inset, focus, card
-- Ring (focus): `var(--ring)` rgba with opacity
-
-## 8. Testing Setup
-
-**Current Status:** None.
-- No test files (Jest, Vitest, or Cypress)
-- No test runners configured in package.json
-- No .test.js, .spec.js files
-
-## 9. Notable Patterns & Observations
-
-### Architecture Patterns
-1. **Monolithic Page**: All UI logic lives in `/app/page.jsx` (1200+ lines). No component extraction despite size.
-2. **Client-Only SPA**: Marked `'use client'` in page.jsx; entire app is client-side after hydration. No SSR data fetching or layouts.
-3. **Streaming + SSE**: Backend integration uses Server-Sent Events for real-time agent output streaming.
-4. **Dependency-Free Rendering**: Custom Markdown renderer (inline in page.jsx) replaces react-markdown; icons are custom SVGs instead of icon library.
+### Data Fetching
+- useAgentList → POST `/agents/list`
+- useAgentRunner → POST `/agents/run` + SSE stream
+- Jira Projects → POST `/jira/projects`
+- Jira Sprints → POST `/jira/sprints`
+- Connection Testing → POST `/jira/sprint`, GET openrouter.ai/api/v1/models
+- Custom headers: X-Jira-Token, X-OpenRouter-Key, X-Model, X-Jira-Email
 
 ### State Management
-- React hooks only (useState, useRef, useCallback, useEffect)
-- No Redux, Zustand, or Jotai
-- State is local to component; `useAgentRunner` encapsulates execution logic
+- React hooks (useState, useCallback, useEffect, useRef)
+- localStorage for persistence:
+  - Credentials: JIRAPILOT_USERNAME, JIRAPILOT_JIRA_EMAIL, JIRAPILOT_JIRA_TOKEN, JIRAPILOT_OPENROUTER_KEY, JIRAPILOT_MCP_URL, JIRAPILOT_MODEL, JIRAPILOT_JIRA_URL
+  - UI: PILOT_THEME, JIRAPILOT_CONN_STATUS (JSON)
+  - Workspaces: JIRAPILOT_WORKSPACES (JSON array of {id, key, name})
+  - History: JIRAPILOT_RUN_HISTORY (max 50)
 
-### Styling
-- No build-time CSS-in-JS (Styled Components, Emotion)
-- No CSS Modules
-- No Tailwind (though geist dep suggests it was considered)
-- All inline React `style={}` objects with design tokens
-- Theme toggle is runtime DOM attribute change
+### Main Components (all in page.jsx)
+- **Home** — Root page component, manages agents, inputs, theme, connection status
+- **NavAside** — Left sidebar with logo, nav, user profile, theme toggle
+- **AgentsListPane** — Middle pane with searchable agent list
+- **RecentRunsPane** — Middle pane with run history
+- **SettingsNavPane** — Settings nav stubs
+- **SettingsBody** — Connection settings + test UI + workspaces list
+- **ToggleInput** — Pill-style toggle switch for addon inputs
+- **JiraProjectSelect** — Workspace dropdown reading from localStorage JIRAPILOT_WORKSPACES
+- **JiraSprintSelect** — Sprint dropdown fetching from POST /jira/sprints based on selected project
+- **RunPanel** — Agent inputs (with jira-project, jira-sprint, toggle support) + live output + connection status
+- **PdfPreviewModal** — PDF preview + download modal
+- **Markdown/PdfMarkdown** — Custom markdown renderers (dependency-free)
+- Helper components: RunStatus, EmptyOutput, ToolCallRow, ConnectionRow
 
-### API Integration
-- Backend contract via single endpoint: POST `/agents/run` (streaming SSE)
-- No REST CRUD operations; entirely request-response for execution
-- Credentials passed as HTTP headers (X-Jira-Token, X-OpenRouter-Key, X-Model)
+## 5. Key Hooks & API Integration
 
-### Form Handling
-- Manual state (inputs object) instead of react-hook-form
-- No validation framework
-- Reset via seed object from agent metadata
+### useAgentList(mcpUrl)
+**Purpose**: Fetch available agents from backend.
+- Returns: `{ agents, loading, error }`
+- Agent shape: `{ id, name, description, blurb, tone, toneLabel, est, inputs, lastRun }`
+- Input types supported: `text`, `textarea`, `select`, `toggle`, `jira-project`, `jira-sprint`
+- Endpoint: POST `/agents/list`
+- Location: src/hooks/useAgentList.js
 
-### Security Notes
-- **Issue**: API credentials stored in browser localStorage (visible in DevTools)
-- **Mitigated by**: Comment in Settings body: "Acceptable for a small trusted team. Rotate keys if a machine leaves the org."
-- No HTTPS enforcement, CSRF protection, or XSS sanitization visible
+### useAgentRunner()
+**Purpose**: Execute agent and stream SSE output.
+- State: output, isStreaming, tools, error, runState (idle/running/done)
+- run(agent, formValues) — validates credentials in localStorage, executes agent, iterates SSE events
+  - content events append to output
+  - tool_use events track Jira calls (displayed as "MCP · Jira")
+  - tool_result marks tools as done
+- abort() — stops streaming via AbortController
+- reset() — clears all state
+- Credentials read from: JIRAPILOT_JIRA_TOKEN, JIRAPILOT_JIRA_EMAIL, JIRAPILOT_OPENROUTER_KEY, JIRAPILOT_MCP_URL, JIRAPILOT_MODEL
+- Location: src/hooks/useAgentRunner.js
 
-### Unused/Dead Code
-- `geist` dependency: installed but not used (custom tokens override)
-- `react-markdown` dependency: installed but custom renderer used
-- Three components listed (InputForm, OutputPanel, AgentSelector) don't exist
-- RECENT_RUNS mock data: hardcoded but never updated
-- Settings `/app/settings/page.jsx`: exists but largely a scaffold
+### useRunHistory()
+**Purpose**: localStorage-based run history.
+- addRun(entry) — prepends to history (max 50)
+- clearRuns() — delete all
+- Adds computed `when` field (relative time: "5m ago", etc.)
+- Location: src/hooks/useRunHistory.js
 
-### Performance Observations
-1. **Grid Layout**: 3-pane layout uses CSS Grid (efficient)
-2. **List Virtualization**: Not implemented; agent list is small (4 items), so likely not needed
-3. **Bundle Size**: Custom components + no external UI library helps keep bundle lean
-4. **Markdown Rendering**: Inline regex-based parser is lightweight but doesn't handle complex Markdown
+### usePdfExport()
+**Purpose**: Generate downloadable PDF from markdown.
+- exportPdf(markdown, agentName) — uses @react-pdf/renderer
+- Filename: {agentName-lowercase}-{date}.pdf
+- Location: src/hooks/usePdfExport.js
 
-## 10. Recommendations
+### MCP Client (lib/mcpClient.js)
+- **listAgents(mcpBaseUrl)** — POST /agents/list
+- **fetchProjects(mcpBaseUrl, jiraToken, jiraEmail)** — POST /jira/projects — lists accessible Jira workspaces
+- **fetchSprints(mcpBaseUrl, jiraToken, jiraEmail, projectKey)** — POST /jira/sprints — lists active/future sprints for a project
+- **testJiraConnection(mcpBaseUrl, jiraToken, jiraEmail)** — POST /jira/sprint with test query
+- **testOpenRouterConnection(openRouterKey)** — GET OpenRouter models endpoint
+- **runAgent(mcpBaseUrl, jiraToken, jiraEmail, orKey, model, agentId, formValues)** — POST /agents/run, returns SSE Response
+- **readSSEStream(response)** — async generator parsing SSE events (content, tool_use, tool_result)
 
-### High Priority
-1. **Extract components**: Break `page.jsx` into smaller files for maintainability.
-   - `components/NavAside.jsx`, `components/RunPanel.jsx`, `components/PdfPreviewModal.jsx`
-2. **Add tests**: Unit tests for hooks (useAgentRunner, useAgentList) and utility functions; e2e tests for agent execution flow.
-3. **Implement settings page**: `/settings` currently unused. Integrate with root page state or implement as standalone.
-4. **Migrate credentials**: Move localStorage-based secrets to environment variables or a secure backend API (OAuth, session tokens).
+## 6. Components & Services
 
-### Medium Priority
-5. **Clean up dependencies**: Remove `geist`, `react-markdown` if truly unused; document rationale if intentional.
-6. **Improve Markdown parser**: Support more Markdown features (blockquotes, code blocks, links, images) if agent output complexity increases.
-7. **Error boundaries**: Wrap components in React Error Boundaries to handle edge cases gracefully.
-8. **Accessibility**: Add ARIA labels, keyboard navigation, and high-contrast mode support.
+### Pages
+| Component | File | Purpose |
+|-----------|------|---------|
+| Home | app/page.jsx | Main 3-column dashboard |
+| RootLayout | app/layout.jsx | App wrapper with fonts |
+| SettingsRedirect | app/settings/page.jsx | Redirect to main Settings |
 
-### Low Priority
-9. **PWA support**: Add manifest.json and service worker for offline capability.
-10. **Internationalization**: If expanding to multiple languages, integrate i18n library.
-11. **Analytics**: Add event tracking (agent runs, errors, theme toggles) for product insights.
+### Panes (in app/page.jsx)
+| Component | Purpose |
+|-----------|---------|
+| NavAside | Left sidebar with logo, nav, user info, theme toggle |
+| AgentsListPane | Agent list + search (shows agents from /agents/list) |
+| RecentRunsPane | Run history from localStorage |
+| SettingsNavPane | Settings navigation stubs |
+| SettingsBody | Connection settings + test + workspaces list |
 
-## 11. Summary
+### Dynamic Input Components (in app/page.jsx)
+| Component | Purpose |
+|-----------|---------|
+| ToggleInput | Pill-style toggle switch. `checked` drives color + knob position. onChange sends boolean, stored as string "true"/"false" |
+| JiraProjectSelect | Reads JIRAPILOT_WORKSPACES from localStorage, renders Select dropdown. Shows placeholder if no workspaces cached |
+| JiraSprintSelect | Fetches sprints from POST /jira/sprints when projectKey prop changes. Shows loading spinner, empty state, or Select with active/future sprints |
 
-AgentDesk FE is a focused, single-purpose React frontend for orchestrating AI agents. Its main strengths are simplicity (no complex dependencies), fast load times (custom components + tokens), and real-time streaming. Key areas for growth are component modularity, test coverage, and credential security. The codebase is well-commented and suitable for small-team adoption, but refactoring is recommended as the feature set expands.
+### RunPanel Input Rendering
+The RunPanel filters inputs by type:
+1. **Regular inputs** (text, textarea, select, jira-project, jira-sprint) rendered in the main input grid
+2. **Toggle inputs** rendered in a separate "Add-ons" section with border separators below the main grid
+3. **jira-project** inputs use `JiraProjectSelect` component
+4. **jira-sprint** inputs use `JiraSprintSelect` component, reading `field.dependsOn` to get the project key from form values
+5. Toggle default values are set via the existing `seed[f.id] = f.default || ''` loop when switching agents
+6. All form values (including toggles as "true"/"false" strings) are sent in the `formValues` object to the backend
 
----
-_End of Report_
+### SettingsBody Workspaces
+After a successful Jira connection test:
+1. Calls `fetchProjects()` to list accessible Jira projects
+2. Stores projects in component state + `localStorage['JIRAPILOT_WORKSPACES']`
+3. Renders a scrollable "Workspaces (N)" panel showing project key + name for each
+
+### UI Atoms (components/ui/Atoms.jsx)
+Button, Input, Textarea, Select, Label, Divider, StatusDot, Spinner, Kbd, Badge, IconBtn
+
+### Hooks (hooks/)
+| Hook | Purpose |
+|------|---------|
+| useAgentList | Fetch agents from backend |
+| useAgentRunner | Execute agent + SSE stream |
+| useRunHistory | localStorage history |
+| usePdfExport | PDF generation |
+
+### Services (lib/)
+| Service | Purpose |
+|---------|---------|
+| mcpClient | Backend API client (agents, jira projects/sprints, connection testing, SSE streaming) |
+
+## 7. Agent Input Types
+
+The frontend supports these dynamic input types (defined in agent markdown frontmatter):
+
+| Type | Component | Description |
+|------|-----------|-------------|
+| `text` | Input | Free-text input with placeholder |
+| `textarea` | Textarea | Multi-line text input |
+| `select` | Select | Dropdown with `options` array |
+| `toggle` | ToggleInput | Boolean switch (on/off), stored as "true"/"false" strings |
+| `jira-project` | JiraProjectSelect | Workspace dropdown populated from localStorage cache |
+| `jira-sprint` | JiraSprintSelect | Sprint dropdown fetched dynamically; depends on `dependsOn` field |
+
+### Toggle Values
+All toggle values are stored as strings ("true" or "false") in `formValues`, since the form state uses `Record<string, string>`. The `ToggleInput` component converts between boolean UI state and string storage:
+- `checked={inputs[field.id] === 'true'}` — reads string, compares to "true"
+- `onChange={(checked) => setInputs({...inputs, [field.id]: String(checked)})}` — writes string
+
+### Sprint Drop-down Dependency
+The `jira-sprint` input type uses a `dependsOn` field in the frontmatter that names the `id` of the `jira-project` input. When the project selection changes, `JiraSprintSelect` re-fetches sprints from the backend:
+```
+inputs:
+  - id: project_key
+    type: jira-project
+  - id: sprint_id
+    type: jira-sprint
+    dependsOn: project_key
+```
+In the RunPanel, `JiraSprintSelect` receives `projectKey={inputs[field.dependsOn] || ''}` and triggers a `fetchSprints()` call via useEffect when projectKey changes.
+
+## 8. Configuration & Environment
+
+### localStorage Keys
+- JIRAPILOT_USERNAME — Display name
+- JIRAPILOT_JIRA_EMAIL — Atlassian email
+- JIRAPILOT_JIRA_TOKEN — Jira API token
+- JIRAPILOT_OPENROUTER_KEY — OpenRouter API key
+- JIRAPILOT_MCP_URL — Backend server URL
+- JIRAPILOT_JIRA_URL — Jira base URL (stored but not used in API calls)
+- JIRAPILOT_MODEL — LLM model (default: qwen/qwen3-coder:free)
+- PILOT_THEME — Theme (dark/light)
+- JIRAPILOT_CONN_STATUS — Connection test results (JSON: {jira, jiraMsg, openrouter, openrouterMsg})
+- JIRAPILOT_WORKSPACES — Jira projects cache (JSON array: [{id, key, name}])
+- JIRAPILOT_RUN_HISTORY — Run history (JSON array, max 50)
+
+### Design Tokens (src/styles/globals.css)
+Colors: --brand, --ink, --ink-60, --ink-82, --on-dark, --bg, --bg-sunken, --bg-raised, --border, --border-soft, --border-strong, --ok, --err, --warn
+Agent Tones: --agent-pm-bg, --agent-pm, --agent-release-bg, --agent-release, --agent-data
+Spacing: --r-sm, --r-md, --r-lg, --r-pill
+Timing: --t-fast, --ease
+Fonts: --font-inter, --font-instrument-serif, --font-jetbrains-mono
+Shadows: --shadow-inset
+
+## 9. Testing Setup
+
+No test infrastructure. No Jest/Vitest configuration present.
+
+## 10. Notable Patterns & Observations
+
+### Strengths
+1. **Monolithic Dashboard**: Single page.jsx makes data flow easy to trace
+2. **Streaming-First**: Full SSE support with real-time tool tracking
+3. **No Backend Credential Storage**: Credentials in localStorage only
+4. **Custom Markdown Renderer**: Dependency-free markdown parsing
+5. **Run History**: Persistent history with relative timestamps
+6. **Connection Testing**: Pre-flight validation for Jira + OpenRouter
+7. **Workspace Caching**: Jira projects cached in localStorage for dropdown population
+8. **Dynamic Sprint Fetching**: Sprint dropdown updates automatically when project selection changes
+9. **Addon Toggles**: Bug Report uses toggle inputs to conditionally enable/disable report sections
+
+### Areas for Improvement
+1. **No Error Boundaries**: Single error crashes entire app
+2. **Large Monolithic File**: page.jsx is ~1455 lines
+3. **Heavy Inline CSS**: Lots of inline style objects
+4. **No TypeScript**: All .jsx files untyped
+5. **Unused Legacy Components**: AgentSelector, InputForm, OutputPanel, PdfExporter
+6. **No Tests**: Zero test coverage
+7. **Hardcoded Values**: Model names, timeouts, defaults
+
+### Recent Changes (2026-04-20)
+1. **Bug Report Agent**: New primary agent with 6 addon toggles (bug report enabled by default, others disabled)
+2. **Workspace Listing**: After successful Jira test, fetches projects via POST /jira/projects and caches in localStorage
+3. **Sprint Dropdown**: Sprint Summary uses jira-project + jira-sprint dropdowns instead of free-text sprint name
+4. **Toggle Input Component**: ToggleInput pill-style switch for addon toggles
+5. **JiraProjectSelect**: Dropdown reading from localStorage workspaces
+6. **JiraSprintSelect**: Dynamic dropdown fetching sprints based on selected project
+7. **Add-ons Section**: Toggle inputs rendered below regular inputs with border separators
+8. **mcpClient.js**: Added fetchProjects() and fetchSprints() API calls
+9. **SettingsBody**: Shows workspace list after successful Jira connection test
+
+## 11. Recommendations
+
+### Immediate
+1. Refactor page.jsx into separate component files
+2. Add TypeScript (.tsx)
+3. Add Error Boundary
+4. Remove unused legacy components
+5. Set up Jest/Vitest
+
+### Mid-Term
+1. Migrate credentials from localStorage to OAuth/session auth
+2. Adopt TailwindCSS or CSS Modules
+3. Add form validation library (react-hook-form, zod)
+4. Improve accessibility (ARIA, keyboard nav, contrast)
+
+### Documentation
+- Document MCP server contract (endpoints, request/response shapes)
+- Document agent prompt format (frontmatter + body)
+- Add JSDoc comments to hooks and API clients

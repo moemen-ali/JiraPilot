@@ -1,14 +1,10 @@
-import { Injectable, BadGatewayException } from '@nestjs/common';
+import { Injectable, BadGatewayException, HttpException } from '@nestjs/common';
 import axios from 'axios';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 @Injectable()
 export class OpenRouterService {
-  /**
-   * Streams a chat completion from OpenRouter.
-   * Yields string chunks as they arrive.
-   */
   async *streamChat(
     openRouterKey: string,
     model: string,
@@ -39,7 +35,31 @@ export class OpenRouterService {
       );
     } catch (err: any) {
       const status = err.response?.status;
-      const msg = err.response?.data?.error?.message ?? err.message;
+      let msg = err.message;
+
+      // With responseType:'stream', error.response.data is a readable stream — read it
+      if (err.response?.data) {
+        try {
+          const chunks: Buffer[] = [];
+          for await (const chunk of err.response.data) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+          }
+          const body = JSON.parse(Buffer.concat(chunks).toString());
+          msg = body?.error?.message ?? body?.message ?? msg;
+        } catch {
+          // fallback to axios message
+        }
+      }
+
+      if (status === 429) {
+        const retryAfter = err.response?.headers?.['retry-after'];
+        const wait = retryAfter ? ` Retry after ${retryAfter}s.` : '';
+        throw new HttpException(
+          `Rate limit exceeded on OpenRouter.${wait} Try a different model or wait before retrying.`,
+          429,
+        );
+      }
+
       throw new BadGatewayException(
         `OpenRouter error (${status ?? 'network'}): ${msg}`,
       );

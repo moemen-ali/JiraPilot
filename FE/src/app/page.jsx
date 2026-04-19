@@ -3,54 +3,60 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAgentList } from '@/hooks/useAgentList';
 import { useAgentRunner } from '@/hooks/useAgentRunner';
+import { useRunHistory } from '@/hooks/useRunHistory';
 import { usePdfExport } from '@/hooks/usePdfExport';
+import { testJiraConnection, testOpenRouterConnection, fetchProjects, fetchSprints } from '@/lib/mcpClient';
 import { I } from '@/components/ui/Icons';
 import {
   Button, Badge, IconBtn, Input, Textarea, Select,
   Label, Divider, StatusDot, Spinner, Kbd,
 } from '@/components/ui/Atoms';
 
-// ── Static mock data for recent runs ────────────────────────────
-const RECENT_RUNS = [
-  { id: 'r1', agent: 'Sprint Summary',  agentId: 'sprint-summary', who: 'You',       when: '2h ago',   board: 'Sprint 42',      status: 'done'   },
-  { id: 'r2', agent: 'Release Notes',   agentId: 'release-notes',  who: 'Elif K.',   when: 'Yesterday', board: 'v4.11.3',        status: 'done'   },
-  { id: 'r3', agent: 'Ticket Summary',  agentId: 'ticket-summary', who: 'Marcus L.', when: 'Yesterday', board: 'PLATFORM-1284',  status: 'done'   },
-  { id: 'r4', agent: 'PRD Generator',   agentId: 'prd-generator',  who: 'You',       when: '2d ago',    board: 'Team Dashboard', status: 'done'   },
-  { id: 'r5', agent: 'Sprint Summary',  agentId: 'sprint-summary', who: 'Priya R.',  when: '3d ago',    board: 'Sprint 41',      status: 'failed' },
-  { id: 'r6', agent: 'Ticket Summary',  agentId: 'ticket-summary', who: 'You',       when: '4d ago',    board: 'INFRA-744',      status: 'done'   },
-];
-
 // ── Settings fields ─────────────────────────────────────────────
 const SETTINGS_FIELDS = [
-  { key: 'JIRAPILOT_OPENROUTER_KEY', label: 'OpenRouter API key', sub: 'Used for model inference. Key is stored in localStorage.', type: 'password', icon: 'Sparkle', mono: true },
-  { key: 'JIRAPILOT_JIRA_TOKEN',     label: 'Jira API token',     sub: 'From id.atlassian.net → API tokens.',                      type: 'password', icon: 'Jira',    mono: true },
-  { key: 'JIRAPILOT_MCP_URL',        label: 'Jira MCP server URL', sub: 'Must have CORS enabled for this origin.',                  type: 'text',     icon: 'Link',    mono: true },
-  { key: 'JIRAPILOT_JIRA_URL',       label: 'Jira base URL',      sub: 'e.g. https://yourorg.atlassian.net',                       type: 'text',     icon: 'Jira',    mono: false },
-  { key: 'JIRAPILOT_MODEL',          label: 'Model',              sub: 'Default: qwen/qwen3-coder:free',                     type: 'text',     icon: 'Sparkle', mono: true  },
+  { key: 'JIRAPILOT_USERNAME',  id: 'username',    label: 'Display name',        sub: 'Your name shown in the sidebar.',                            type: 'text',     icon: 'Users',   mono: false },
+  { key: 'JIRAPILOT_OPENROUTER_KEY', id: 'openrouterKey', label: 'OpenRouter API key',  sub: 'Used for model inference. Key is stored in localStorage.',   type: 'password', icon: 'Sparkle', mono: true  },
+  { key: 'JIRAPILOT_JIRA_EMAIL',    id: 'jiraEmail',    label: 'Jira account email',  sub: 'Your Atlassian account email — required for Jira Cloud auth.', type: 'text',     icon: 'Jira',    mono: false },
+  { key: 'JIRAPILOT_JIRA_TOKEN',    id: 'jiraToken',    label: 'Jira API token',      sub: 'From id.atlassian.net → Security → API tokens.',              type: 'password', icon: 'Jira',    mono: true  },
+  { key: 'JIRAPILOT_MCP_URL',       id: 'mcpUrl',       label: 'Jira MCP server URL', sub: 'Must have CORS enabled for this origin.',                     type: 'text',     icon: 'Link',    mono: true  },
+  { key: 'JIRAPILOT_JIRA_URL',      id: 'jiraUrl',      label: 'Jira base URL',       sub: 'e.g. https://yourorg.atlassian.net',                         type: 'text',     icon: 'Jira',    mono: false },
+  { key: 'JIRAPILOT_MODEL',         id: 'model',         label: 'Model',               sub: 'Default: qwen/qwen3-coder:free',                             type: 'text',     icon: 'Sparkle', mono: true  },
 ];
 
 // ═══════════════════════════════════════════════════════════════
 // Root page
 // ═══════════════════════════════════════════════════════════════
 export default function Home() {
-  const { agents, loading } = useAgentList();
+  const [mcpUrl, setMcpUrl]     = useState('');
+  const { agents, loading } = useAgentList(mcpUrl);
   const [activeId, setActiveId] = useState(null);
   const [view, setView]         = useState('agents');
   const [inputs, setInputs]     = useState({});
   const [pdfOpen, setPdfOpen]   = useState(false);
   const [toast, setToast]       = useState(null);
   const [theme, setTheme]       = useState('dark');
+  const [username, setUsername] = useState('');
+  const [email, setEmail]       = useState('');
+  const [connStatus, setConnStatus] = useState({ jira: 'idle', jiraMsg: '', openrouter: 'idle', openrouterMsg: '' });
 
   const { output, runState, tools, error, run, abort, reset } = useAgentRunner();
+  const { runs, addRun, clearRuns } = useRunHistory();
   const { exportPdf } = usePdfExport();
 
   const activeAgent = agents.find(a => a.id === activeId) || agents[0];
 
-  // Initialise theme from localStorage
+  // Initialise theme + user info + connection status from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('PILOT_THEME') || 'dark';
     setTheme(saved);
     document.documentElement.dataset.theme = saved;
+    setUsername(localStorage.getItem('JIRAPILOT_USERNAME') || '');
+    setEmail(localStorage.getItem('JIRAPILOT_JIRA_EMAIL') || '');
+    setMcpUrl(localStorage.getItem('JIRAPILOT_MCP_URL') || '');
+    try {
+      const cs = JSON.parse(localStorage.getItem('JIRAPILOT_CONN_STATUS') || 'null');
+      if (cs) setConnStatus(cs);
+    } catch {}
   }, []);
 
   // Auto-select first agent
@@ -68,14 +74,26 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeAgent?.id]);
 
-  // Auto-open PDF modal on completion
+  // Auto-open PDF modal on completion + record run history
   const wasDone = useRef(false);
+  const prevRunState = useRef('idle');
   useEffect(() => {
     if (runState === 'done' && !wasDone.current) {
       wasDone.current = true;
       setTimeout(() => setPdfOpen(true), 300);
     }
     if (runState !== 'done') wasDone.current = false;
+
+    if (prevRunState.current === 'running' && runState === 'done' && activeAgent) {
+      const firstVal = inputs ? Object.values(inputs)[0] : '';
+      addRun({ agentId: activeAgent.id, agentName: activeAgent.name, who: username || 'You', status: 'done', summary: firstVal || '' });
+    }
+    if (prevRunState.current === 'running' && runState === 'idle' && error && activeAgent) {
+      const firstVal = inputs ? Object.values(inputs)[0] : '';
+      addRun({ agentId: activeAgent.id, agentName: activeAgent.name, who: username || 'You', status: 'failed', summary: firstVal || '' });
+    }
+    prevRunState.current = runState;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runState]);
 
   const handleRun = useCallback(() => {
@@ -121,7 +139,7 @@ export default function Home() {
       overflow: 'hidden',
     }}>
       {/* ── Left nav ── */}
-      <NavAside view={view} setView={setView} theme={theme} toggleTheme={toggleTheme} />
+      <NavAside view={view} setView={setView} theme={theme} toggleTheme={toggleTheme} username={username} email={email} />
 
       {/* ── Middle pane ── */}
       <section style={{
@@ -138,7 +156,9 @@ export default function Home() {
         )}
         {view === 'runs' && (
           <RecentRunsPane
+            runs={runs}
             onOpen={(r) => { setActiveId(r.agentId); setView('agents'); }}
+            onClear={clearRuns}
           />
         )}
         {view === 'settings' && <SettingsNavPane />}
@@ -147,7 +167,17 @@ export default function Home() {
       {/* ── Right pane ── */}
       <section style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
         {view === 'settings' ? (
-          <SettingsBody />
+          <SettingsBody
+            onSave={(vals) => {
+              setUsername(vals['JIRAPILOT_USERNAME'] || '');
+              setEmail(vals['JIRAPILOT_JIRA_EMAIL'] || '');
+              setMcpUrl(vals['JIRAPILOT_MCP_URL'] || '');
+            }}
+            onTest={(cs) => {
+              setConnStatus(cs);
+              localStorage.setItem('JIRAPILOT_CONN_STATUS', JSON.stringify(cs));
+            }}
+          />
         ) : (
           activeAgent && (
             <RunPanel
@@ -158,6 +188,7 @@ export default function Home() {
               tools={tools}
               output={output}
               error={error}
+              connStatus={connStatus}
               onRun={handleRun}
               onStop={abort}
               onOpenPdf={() => setPdfOpen(true)}
@@ -185,7 +216,9 @@ export default function Home() {
 // ═══════════════════════════════════════════════════════════════
 // Left nav
 // ═══════════════════════════════════════════════════════════════
-function NavAside({ view, setView, theme, toggleTheme }) {
+function NavAside({ view, setView, theme, toggleTheme, username, email }) {
+  const displayName = username || 'You';
+  const initials = displayName.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
   return (
     <aside style={{
       borderRight: '1px solid var(--border)',
@@ -238,13 +271,13 @@ function NavAside({ view, setView, theme, toggleTheme }) {
             background: 'var(--agent-pm-bg)', color: 'var(--agent-pm)',
             display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600,
             flexShrink: 0,
-          }}>A</div>
+          }}>{initials}</div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              Ahmed
+              {displayName}
             </div>
             <div style={{ fontSize: 11, color: 'var(--ink-60)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              trianglz.com
+              {email || 'Not set'}
             </div>
           </div>
         </div>
@@ -387,15 +420,26 @@ function AgentRow({ agent, active, onClick }) {
 // ═══════════════════════════════════════════════════════════════
 // Recent runs pane (middle, view='runs')
 // ═══════════════════════════════════════════════════════════════
-function RecentRunsPane({ onOpen }) {
+function RecentRunsPane({ runs, onOpen, onClear }) {
   return (
     <>
       <div style={{ padding: '16px 16px 14px', borderBottom: '1px solid var(--border)' }}>
-        <h2 className="display" style={{ fontSize: 22, margin: 0, letterSpacing: -0.3 }}>Recent runs</h2>
-        <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 4 }}>Latest 7 days</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <h2 className="display" style={{ fontSize: 22, margin: 0, letterSpacing: -0.3 }}>Recent runs</h2>
+          {runs.length > 0 && (
+            <button onClick={onClear} style={{ fontSize: 11.5, color: 'var(--ink-60)', textDecoration: 'underline' }}>
+              Clear
+            </button>
+          )}
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--ink-60)', marginTop: 4 }}>{runs.length} run{runs.length !== 1 ? 's' : ''} stored</div>
       </div>
       <div style={{ flex: 1, overflow: 'auto', padding: 8 }}>
-        {RECENT_RUNS.map(r => (
+        {runs.length === 0 ? (
+          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-60)', fontSize: 13 }}>
+            No runs yet. Run an agent to see history here.
+          </div>
+        ) : runs.map(r => (
           <button
             key={r.id}
             onClick={() => onOpen(r)}
@@ -410,14 +454,16 @@ function RecentRunsPane({ onOpen }) {
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-              <span style={{ fontSize: 13, fontWeight: 500 }}>{r.agent}</span>
+              <span style={{ fontSize: 13, fontWeight: 500 }}>{r.agentName}</span>
               {r.status === 'failed'
                 ? <Badge tone="err">failed</Badge>
                 : <Badge tone="ok">done</Badge>
               }
               <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--ink-60)' }}>{r.when}</span>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--ink-60)' }}>{r.board} · by {r.who}</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-60)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {r.summary ? `${r.summary} · ` : ''}by {r.who}
+            </div>
           </button>
         ))}
       </div>
@@ -426,9 +472,146 @@ function RecentRunsPane({ onOpen }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// Dynamic input components
+// ═══════════════════════════════════════════════════════════════
+
+function ToggleInput({ id, checked, onChange, label }) {
+  return (
+    <button
+      id={id}
+      type="button"
+      onClick={() => onChange(!checked)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        width: '100%', padding: '7px 0',
+        background: 'transparent', textAlign: 'left',
+        fontSize: 13, color: checked ? 'var(--ink)' : 'var(--ink-60)',
+        transition: 'color var(--t-fast)',
+      }}
+    >
+      <span style={{
+        width: 32, height: 18, borderRadius: 9, flexShrink: 0,
+        background: checked ? 'var(--brand)' : 'var(--ink-08)',
+        border: `1px solid ${checked ? 'var(--brand)' : 'var(--border-strong)'}`,
+        position: 'relative', transition: 'background var(--t-fast)',
+      }}>
+        <span style={{
+          position: 'absolute', top: 2,
+          left: checked ? 14 : 2,
+          width: 12, height: 12, borderRadius: '50%',
+          background: checked ? '#fff' : 'var(--ink-40)',
+          transition: 'left var(--t-fast), background var(--t-fast)',
+        }}/>
+      </span>
+      <span style={{ fontWeight: checked ? 500 : 400 }}>{label}</span>
+    </button>
+  );
+}
+
+function JiraProjectSelect({ id, value, onChange }) {
+  const projects = (() => {
+    try { return JSON.parse(localStorage.getItem('JIRAPILOT_WORKSPACES') || '[]'); } catch { return []; }
+  })();
+
+  if (projects.length === 0) {
+    return (
+      <div style={{
+        padding: '8px 10px', fontSize: 12.5, color: 'var(--ink-60)',
+        border: '1px solid var(--border)', borderRadius: 'var(--r-sm)',
+        background: 'var(--bg-raised)',
+      }}>
+        No workspaces found — test your Jira connection in Settings.
+      </div>
+    );
+  }
+
+  return (
+    <Select
+      id={id}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">Select workspace…</option>
+      {projects.map(p => (
+        <option key={p.key} value={p.key}>{p.name} ({p.key})</option>
+      ))}
+    </Select>
+  );
+}
+
+function JiraSprintSelect({ id, projectKey, value, onChange }) {
+  const [sprints, setSprints] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!projectKey) { setSprints([]); return; }
+    const mcpUrl  = localStorage.getItem('JIRAPILOT_MCP_URL') || '';
+    const token   = localStorage.getItem('JIRAPILOT_JIRA_TOKEN') || '';
+    const email   = localStorage.getItem('JIRAPILOT_JIRA_EMAIL') || '';
+    if (!mcpUrl || !token) return;
+    setLoading(true);
+    fetchSprints(mcpUrl, token, email, projectKey)
+      .then(({ sprints: s = [] }) => setSprints(s))
+      .catch(() => setSprints([]))
+      .finally(() => setLoading(false));
+  }, [projectKey]);
+
+  if (!projectKey) {
+    return (
+      <div style={{
+        padding: '8px 10px', fontSize: 12.5, color: 'var(--ink-60)',
+        border: '1px solid var(--border)', borderRadius: 'var(--r-sm)',
+        background: 'var(--bg-raised)',
+      }}>
+        Select a workspace first.
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div style={{
+        padding: '8px 10px', fontSize: 12.5, color: 'var(--ink-60)',
+        border: '1px solid var(--border)', borderRadius: 'var(--r-sm)',
+        background: 'var(--bg-raised)', display: 'flex', alignItems: 'center', gap: 6,
+      }}>
+        <Spinner size={11}/> Loading sprints…
+      </div>
+    );
+  }
+
+  if (sprints.length === 0) {
+    return (
+      <div style={{
+        padding: '8px 10px', fontSize: 12.5, color: 'var(--ink-60)',
+        border: '1px solid var(--border)', borderRadius: 'var(--r-sm)',
+        background: 'var(--bg-raised)',
+      }}>
+        No active or upcoming sprints found.
+      </div>
+    );
+  }
+
+  return (
+    <Select
+      id={id}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">Select sprint…</option>
+      {sprints.map(s => (
+        <option key={s.id} value={String(s.id)}>
+          {s.name}{s.state === 'active' ? ' (active)' : ''}
+        </option>
+      ))}
+    </Select>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Run panel (right pane, view='agents')
 // ═══════════════════════════════════════════════════════════════
-function RunPanel({ agent, inputs, setInputs, runState, tools, output, error, onRun, onStop, onOpenPdf, onReset }) {
+function RunPanel({ agent, inputs, setInputs, runState, tools, output, error, connStatus, onRun, onStop, onOpenPdf, onReset }) {
   const [showPrompt, setShowPrompt] = useState(false);
 
   const copyMarkdown = useCallback(async () => {
@@ -507,11 +690,25 @@ function RunPanel({ agent, inputs, setInputs, runState, tools, output, error, on
             >Reset</button>
           </div>
 
+          {/* Regular inputs */}
           <div style={{ display: 'grid', gap: 14 }}>
-            {agent.inputs.map(field => (
+            {agent.inputs.filter(f => f.type !== 'toggle').map(field => (
               <div key={field.id}>
                 <Label htmlFor={field.id}>{field.label}</Label>
-                {(field.type === 'select' || field.kind === 'select') ? (
+                {field.type === 'jira-project' ? (
+                  <JiraProjectSelect
+                    id={field.id}
+                    value={inputs[field.id] || ''}
+                    onChange={(v) => setInputs({ ...inputs, [field.id]: v })}
+                  />
+                ) : field.type === 'jira-sprint' ? (
+                  <JiraSprintSelect
+                    id={field.id}
+                    projectKey={inputs[field.dependsOn] || ''}
+                    value={inputs[field.id] || ''}
+                    onChange={(v) => setInputs({ ...inputs, [field.id]: v })}
+                  />
+                ) : (field.type === 'select' || field.kind === 'select') ? (
                   <Select
                     id={field.id}
                     value={inputs[field.id] || ''}
@@ -541,6 +738,36 @@ function RunPanel({ agent, inputs, setInputs, runState, tools, output, error, on
               </div>
             ))}
           </div>
+
+          {/* Add-on toggles */}
+          {agent.inputs.some(f => f.type === 'toggle') && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{
+                fontSize: 11, fontWeight: 600, letterSpacing: 0.08,
+                textTransform: 'uppercase', color: 'var(--ink-60)',
+                marginBottom: 8,
+              }}>Add-ons</div>
+              <div style={{
+                padding: '4px 12px',
+                background: 'var(--bg-raised)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r-md)',
+              }}>
+                {agent.inputs.filter(f => f.type === 'toggle').map((field, i, arr) => (
+                  <div key={field.id} style={{
+                    borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}>
+                    <ToggleInput
+                      id={field.id}
+                      label={field.label}
+                      checked={inputs[field.id] === 'true'}
+                      onChange={(checked) => setInputs({ ...inputs, [field.id]: String(checked) })}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* System prompt preview */}
           {showPrompt && agent.body && (
@@ -572,8 +799,8 @@ function RunPanel({ agent, inputs, setInputs, runState, tools, output, error, on
             }}>
               <I.Link size={12}/> Connections
             </div>
-            <ConnectionRow icon={<I.Jira size={13}/>} label="Jira · MCP" />
-            <ConnectionRow icon={<I.Sparkle size={13}/>} label="OpenRouter · claude-sonnet-4-5" />
+            <ConnectionRow icon={<I.Jira size={13}/>} label="Jira · MCP" status={connStatus.jira} statusMsg={connStatus.jiraMsg} />
+            <ConnectionRow icon={<I.Sparkle size={13}/>} label="OpenRouter" status={connStatus.openrouter} statusMsg={connStatus.openrouterMsg} />
           </div>
         </div>
 
@@ -722,13 +949,18 @@ function EmptyOutput({ agent, onRun }) {
   );
 }
 
-function ConnectionRow({ icon, label }) {
+function ConnectionRow({ icon, label, status = 'idle', statusMsg }) {
+  const dotTone = status === 'ok' ? 'ok' : status === 'err' ? 'err' : 'neutral';
+  const text = status === 'checking' ? 'Checking…'
+    : status === 'ok'  ? (statusMsg || 'Connected')
+    : status === 'err' ? (statusMsg || 'Error')
+    : 'Not tested';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 12 }}>
       <span style={{ color: 'var(--ink-60)' }}>{icon}</span>
       <span style={{ color: 'var(--ink-82)' }}>{label}</span>
-      <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--ink-60)' }}>
-        <StatusDot tone="ok"/> Connected
+      <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: status === 'err' ? 'var(--err)' : 'var(--ink-60)' }}>
+        {status === 'checking' ? <Spinner size={9}/> : <StatusDot tone={dotTone}/>} {text}
       </span>
     </div>
   );
@@ -782,10 +1014,15 @@ function SettingsNavPane() {
   );
 }
 
-function SettingsBody() {
+function SettingsBody({ onSave, onTest }) {
   const [values, setValues] = useState({});
   const [revealed, setRevealed] = useState({});
   const [saved, setSaved] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null); // { jira, jiraMsg, openrouter, openrouterMsg }
+  const [workspaces, setWorkspaces] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('JIRAPILOT_WORKSPACES') || '[]'); } catch { return []; }
+  });
 
   useEffect(() => {
     const init = {};
@@ -799,11 +1036,42 @@ function SettingsBody() {
       if (val) localStorage.setItem(f.key, val);
       else localStorage.removeItem(f.key);
     });
+    onSave?.(values);
     setSaved(true);
     setTimeout(() => setSaved(false), 2400);
   }
 
-  const iconMap = { Sparkle: I.Sparkle, Jira: I.Jira, Link: I.Link, Warning: I.Warning, Key: I.Key };
+  async function handleTest() {
+    const mcpUrl  = values['JIRAPILOT_MCP_URL'];
+    const token   = values['JIRAPILOT_JIRA_TOKEN'];
+    const email   = values['JIRAPILOT_JIRA_EMAIL'];
+    const orKey   = values['JIRAPILOT_OPENROUTER_KEY'];
+    if (!mcpUrl || !token || !orKey) {
+      setTestResult({ jira: 'err', jiraMsg: 'Fill MCP URL + Jira token first', openrouter: 'err', openrouterMsg: 'Fill OpenRouter key first' });
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    const [jiraRes, orRes] = await Promise.all([
+      testJiraConnection(mcpUrl, token, email),
+      testOpenRouterConnection(orKey),
+    ]);
+    const cs = { jira: jiraRes.ok ? 'ok' : 'err', jiraMsg: jiraRes.message, openrouter: orRes.ok ? 'ok' : 'err', openrouterMsg: orRes.message };
+    setTestResult(cs);
+    onTest?.(cs);
+
+    if (jiraRes.ok) {
+      try {
+        const { projects = [] } = await fetchProjects(mcpUrl, token, email);
+        setWorkspaces(projects);
+        localStorage.setItem('JIRAPILOT_WORKSPACES', JSON.stringify(projects));
+      } catch { /* non-fatal */ }
+    }
+
+    setTesting(false);
+  }
+
+  const iconMap = { Sparkle: I.Sparkle, Jira: I.Jira, Link: I.Link, Warning: I.Warning, Key: I.Key, Users: I.Users };
 
   return (
     <div style={{ padding: 36, overflow: 'auto', flex: 1, maxWidth: 820 }}>
@@ -839,6 +1107,7 @@ function SettingsBody() {
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <Input
+                  id={f.id}
                     type={f.type === 'password' && !isRevealed ? 'password' : 'text'}
                     value={values[f.key] || ''}
                     onChange={(e) => setValues(v => ({ ...v, [f.key]: e.target.value }))}
@@ -873,8 +1142,68 @@ function SettingsBody() {
         </span>
       </div>
 
+      {/* Connection test results */}
+      {testResult && (
+        <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {[
+            { key: 'jira', label: 'Jira · MCP', icon: <I.Jira size={13}/> },
+            { key: 'openrouter', label: 'OpenRouter', icon: <I.Sparkle size={13}/> },
+          ].map(({ key, label, icon }) => (
+            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 'var(--r-md)', background: 'var(--bg-raised)', border: '1px solid var(--border)', fontSize: 12.5 }}>
+              <span style={{ color: 'var(--ink-60)' }}>{icon}</span>
+              <span style={{ color: 'var(--ink-82)' }}>{label}</span>
+              <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: testResult[key] === 'ok' ? 'var(--ok)' : 'var(--err)' }}>
+                <StatusDot tone={testResult[key] === 'ok' ? 'ok' : 'err'}/>
+                {testResult[`${key}Msg`]}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Workspaces (projects) discovered after successful Jira test */}
+      {workspaces.length > 0 && (
+        <div style={{
+          marginTop: 16,
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-md)',
+          background: 'var(--bg-raised)',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            padding: '10px 14px',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', gap: 8,
+            fontSize: 11, fontWeight: 600, letterSpacing: 0.06,
+            textTransform: 'uppercase', color: 'var(--ink-60)',
+          }}>
+            <I.Jira size={12}/> Workspaces ({workspaces.length})
+          </div>
+          <div style={{ maxHeight: 180, overflow: 'auto' }}>
+            {workspaces.map((ws, i) => (
+              <div key={ws.key} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 14px',
+                borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                fontSize: 12.5,
+              }}>
+                <span className="mono" style={{
+                  fontSize: 11, fontWeight: 600, color: 'var(--brand)',
+                  background: 'var(--ink-04)', padding: '2px 6px',
+                  borderRadius: 'var(--r-sm)', flexShrink: 0,
+                }}>{ws.key}</span>
+                <span style={{ color: 'var(--ink-82)' }}>{ws.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ marginTop: 20, display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
         {saved && <Badge tone="ok">Saved</Badge>}
+        <Button variant="default" onClick={handleTest} disabled={testing} icon={testing ? <Spinner size={11}/> : <I.Link size={11}/>}>
+          {testing ? 'Testing…' : 'Test connections'}
+        </Button>
         <Button variant="primary" onClick={handleSave}>Save</Button>
       </div>
     </div>

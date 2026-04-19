@@ -1,6 +1,10 @@
 ---
 name: Ticket Summary
 description: Summarize a Jira ticket with context and action items
+blurb: Summarizes individual tickets with assignee, blockers, and next steps.
+tone: eng
+toneLabel: Eng
+est: ~15s
 inputs:
   - id: ticket_key
     label: Ticket key

@@ -7,22 +7,20 @@ export interface AgentConfig {
   id: string;
   name: string;
   description: string;
+  blurb: string;
+  tone: string;
+  toneLabel: string;
+  est: string;
   inputs: any[];
   systemPrompt: string;
 }
 
-const AGENT_IDS = [
-  'release-notes',
-  'sprint-summary',
-  'ticket-summary',
-  'prd-generator',
-];
+const AGENT_IDS = ['bug-report', 'sprint-summary', 'prd-generator'];
 
 // Maps each agent to the Jira endpoint it needs
 const AGENT_JIRA_ROUTE: Record<string, string> = {
-  'release-notes': 'sprint',
+  'bug-report': 'epic',
   'sprint-summary': 'sprint',
-  'ticket-summary': 'tickets',
   'prd-generator': 'epic',
 };
 
@@ -47,6 +45,10 @@ export class AgentsService {
         id,
         name: data.name || id,
         description: data.description || '',
+        blurb: data.blurb || data.description || '',
+        tone: data.tone || 'neutral',
+        toneLabel: data.toneLabel || '',
+        est: data.est || '',
         inputs: data.inputs || [],
         systemPrompt: content.trim(),
       });

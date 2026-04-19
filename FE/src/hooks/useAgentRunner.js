@@ -23,6 +23,7 @@ export function useAgentRunner() {
 
   const run = useCallback(async (agent, formValues) => {
     const jiraToken  = localStorage.getItem('JIRAPILOT_JIRA_TOKEN');
+    const jiraEmail  = localStorage.getItem('JIRAPILOT_JIRA_EMAIL');
     const orKey      = localStorage.getItem('JIRAPILOT_OPENROUTER_KEY');
     const mcpUrl     = localStorage.getItem('JIRAPILOT_MCP_URL');
     const model      = localStorage.getItem('JIRAPILOT_MODEL') || 'qwen/qwen3-coder:free';
@@ -50,7 +51,7 @@ export function useAgentRunner() {
     abortRef.current = controller;
 
     try {
-      const response = await runAgent(mcpUrl, jiraToken, orKey, model, agent.id, formValues);
+      const response = await runAgent(mcpUrl, jiraToken, jiraEmail, orKey, model, agent.id, formValues);
 
       let accumulated = '';
       for await (const event of readSSEStream(response)) {

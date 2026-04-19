@@ -31,7 +31,7 @@ async function bootstrap() {
       }
     },
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-Jira-Token', 'X-OpenRouter-Key', 'X-Model'],
+    allowedHeaders: ['Content-Type', 'X-Jira-Token', 'X-Jira-Email', 'X-OpenRouter-Key', 'X-Model'],
     credentials: false,
   });
 

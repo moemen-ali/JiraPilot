@@ -1,40 +1,26 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { parseAgent } from '@/lib/agentParser';
+import { listAgents } from '@/lib/mcpClient';
 
-const AGENT_FILES = [
-  'release-notes',
-  'prd-generator',
-  'ticket-summary',
-  'sprint-summary',
-];
-
-export function useAgentList() {
+export function useAgentList(mcpUrl) {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    async function loadAgents() {
-      try {
-        const results = await Promise.all(
-          AGENT_FILES.map(async (id) => {
-            const res = await fetch(`/agents/${id}.md`);
-            if (!res.ok) throw new Error(`Failed to load agent: ${id}`);
-            const text = await res.text();
-            return parseAgent(text, id);
-          })
-        );
-        setAgents(results);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+    if (!mcpUrl) {
+      setError('MCP server URL not set. Configure it in Settings.');
+      setLoading(false);
+      return;
     }
-    loadAgents();
-  }, []);
+    setLoading(true);
+    setError(null);
+    listAgents(mcpUrl)
+      .then(setAgents)
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [mcpUrl]);
 
   return { agents, loading, error };
 }

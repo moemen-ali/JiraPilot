@@ -1,11 +1,19 @@
 ---
 name: Sprint Summary
 description: Sprint status and blocker summary for any active sprint
+blurb: Summarizes sprint progress, blockers, and risks.
+tone: pm
+toneLabel: PM
+est: ~20s
 inputs:
-  - id: sprint_name
-    label: Sprint name
-    type: text
-    placeholder: "e.g. Sprint 42"
+  - id: project_key
+    label: Workspace / Project
+    type: jira-project
+    required: true
+  - id: sprint_id
+    label: Sprint
+    type: jira-sprint
+    dependsOn: project_key
     required: true
   - id: focus
     label: Focus area

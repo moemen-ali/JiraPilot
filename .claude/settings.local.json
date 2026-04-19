@@ -12,7 +12,9 @@
       "Bash(ls -lh \"d:\\\\Work\\\\AgentDesk\\\\BE\\\\CODEBASE.\"*)",
       "Bash(awk '{print $5, $9}')",
       "Bash(cmd /c \"rename \\\\\"d:\\\\\\\\Work\\\\\\\\AgentDesk\\\\\" JiraPilot\")",
-      "Bash(powershell -Command \"Rename-Item -Path 'D:\\\\Work\\\\AgentDesk' -NewName 'JiraPilot'\")"
+      "Bash(powershell -Command \"Rename-Item -Path 'D:\\\\Work\\\\AgentDesk' -NewName 'JiraPilot'\")",
+      "Read(//dev/**)",
+      "Bash(node -e \"const fs=require\\('fs'\\); const c=fs.readFileSync\\('src/app/page.jsx','utf8'\\); console.log\\('lines:', c.split\\('\\\\n'\\).length\\)\")"
     ]
   }
 }

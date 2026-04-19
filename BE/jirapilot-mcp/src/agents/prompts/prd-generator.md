@@ -1,6 +1,10 @@
 ---
 name: PRD Generator
 description: Generate a Product Requirements Document from a feature brief
+blurb: Generates a full PRD from an epic with goals, user stories, and metrics.
+tone: data
+toneLabel: Data
+est: ~30s
 inputs:
   - id: feature_name
     label: Feature name

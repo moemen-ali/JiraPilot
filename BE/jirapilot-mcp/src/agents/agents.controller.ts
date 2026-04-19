@@ -32,6 +32,7 @@ export class AgentsController {
   async runAgent(
     @Body() dto: RunAgentDto,
     @Headers('x-jira-token') jiraToken: string,
+    @Headers('x-jira-email') jiraEmail: string,
     @Headers('x-openrouter-key') openRouterKey: string,
     @Headers('x-model') model: string | undefined,
     @Res() res: Response,
@@ -44,7 +45,12 @@ export class AgentsController {
     const jiraRoute = this.agentsService.getJiraRoute(dto.agentId);
 
     if (jiraRoute && jiraToken) {
-      jiraData = await this.fetchJiraData(jiraRoute, dto.formValues, jiraToken);
+      jiraData = await this.fetchJiraData(
+        jiraRoute,
+        dto.formValues,
+        jiraToken,
+        jiraEmail,
+      );
     }
 
     // ── Step 2: Build the user message ──────────────────────────────────────
@@ -85,15 +91,20 @@ export class AgentsController {
     route: string,
     formValues: Record<string, string>,
     jiraToken: string,
+    jiraEmail?: string,
   ) {
     switch (route) {
       case 'sprint':
         return this.jiraService.getSprintIssues(
           {
             sprintName: formValues.sprint_name || formValues.sprintName || '',
+            sprintId: formValues.sprint_id
+              ? Number(formValues.sprint_id)
+              : undefined,
             projectKey: formValues.project_key || formValues.projectKey,
           },
           jiraToken,
+          jiraEmail,
         );
       case 'tickets':
         return this.jiraService.getTickets(
@@ -104,6 +115,7 @@ export class AgentsController {
               .filter(Boolean),
           },
           jiraToken,
+          jiraEmail,
         );
       case 'epic':
         return this.jiraService.getEpicWithChildren(
@@ -111,6 +123,7 @@ export class AgentsController {
             epicKey: formValues.epic_key || formValues.epicKey || '',
           },
           jiraToken,
+          jiraEmail,
         );
       default:
         return {};

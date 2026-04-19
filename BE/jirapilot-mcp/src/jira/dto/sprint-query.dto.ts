@@ -1,8 +1,13 @@
 import { IsString, IsOptional, IsInt, Min, Max } from 'class-validator';
 
 export class SprintQueryDto {
+  @IsOptional()
   @IsString()
-  sprintName: string;
+  sprintName?: string;
+
+  @IsOptional()
+  @IsInt()
+  sprintId?: number;
 
   @IsOptional()
   @IsString()

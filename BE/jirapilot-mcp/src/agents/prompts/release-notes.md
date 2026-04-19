@@ -1,6 +1,10 @@
 ---
 name: Release Notes
 description: Generate release notes from a list of merged PRs or commits
+blurb: Generates structured release notes from completed sprint tickets.
+tone: release
+toneLabel: Rel
+est: ~25s
 inputs:
   - id: sprint_name
     label: Sprint name
