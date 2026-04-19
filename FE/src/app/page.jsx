@@ -13,12 +13,14 @@ import {
 } from '@/components/ui/Atoms';
 
 // ── Settings fields ─────────────────────────────────────────────
+const DEFAULT_MCP_URL = process.env.NEXT_PUBLIC_MCP_URL || 'http://localhost:3001';
+
 const SETTINGS_FIELDS = [
   { key: 'JIRAPILOT_USERNAME',  id: 'username',    label: 'Display name',        sub: 'Your name shown in the sidebar.',                            type: 'text',     icon: 'Users',   mono: false },
   { key: 'JIRAPILOT_OPENROUTER_KEY', id: 'openrouterKey', label: 'OpenRouter API key',  sub: 'Used for model inference. Key is stored in localStorage.',   type: 'password', icon: 'Sparkle', mono: true  },
   { key: 'JIRAPILOT_JIRA_EMAIL',    id: 'jiraEmail',    label: 'Jira account email',  sub: 'Your Atlassian account email — required for Jira Cloud auth.', type: 'text',     icon: 'Jira',    mono: false },
   { key: 'JIRAPILOT_JIRA_TOKEN',    id: 'jiraToken',    label: 'Jira API token',      sub: 'From id.atlassian.net → Security → API tokens.',              type: 'password', icon: 'Jira',    mono: true  },
-  { key: 'JIRAPILOT_MCP_URL',       id: 'mcpUrl',       label: 'Jira MCP server URL', sub: 'Must have CORS enabled for this origin.',                     type: 'text',     icon: 'Link',    mono: true  },
+  ...(!process.env.NEXT_PUBLIC_MCP_URL ? [{ key: 'JIRAPILOT_MCP_URL', id: 'mcpUrl', label: 'Jira MCP server URL', sub: 'Must have CORS enabled for this origin.', type: 'text', icon: 'Link', mono: true }] : []),
   { key: 'JIRAPILOT_JIRA_URL',      id: 'jiraUrl',      label: 'Jira base URL',       sub: 'e.g. https://yourorg.atlassian.net',                         type: 'text',     icon: 'Jira',    mono: false },
   { key: 'JIRAPILOT_MODEL',         id: 'model',         label: 'Model',               sub: 'Default: qwen/qwen3-coder:free',                             type: 'text',     icon: 'Sparkle', mono: true  },
 ];
@@ -52,7 +54,7 @@ export default function Home() {
     document.documentElement.dataset.theme = saved;
     setUsername(localStorage.getItem('JIRAPILOT_USERNAME') || '');
     setEmail(localStorage.getItem('JIRAPILOT_JIRA_EMAIL') || '');
-    setMcpUrl(localStorage.getItem('JIRAPILOT_MCP_URL') || '');
+    setMcpUrl(process.env.NEXT_PUBLIC_MCP_URL || localStorage.getItem('JIRAPILOT_MCP_URL') || DEFAULT_MCP_URL);
     try {
       const cs = JSON.parse(localStorage.getItem('JIRAPILOT_CONN_STATUS') || 'null');
       if (cs) setConnStatus(cs);
@@ -171,7 +173,7 @@ export default function Home() {
             onSave={(vals) => {
               setUsername(vals['JIRAPILOT_USERNAME'] || '');
               setEmail(vals['JIRAPILOT_JIRA_EMAIL'] || '');
-              setMcpUrl(vals['JIRAPILOT_MCP_URL'] || '');
+              setMcpUrl(vals['JIRAPILOT_MCP_URL'] || DEFAULT_MCP_URL);
             }}
             onTest={(cs) => {
               setConnStatus(cs);
@@ -545,7 +547,7 @@ function JiraSprintSelect({ id, projectKey, value, onChange }) {
 
   useEffect(() => {
     if (!projectKey) { setSprints([]); return; }
-    const mcpUrl  = localStorage.getItem('JIRAPILOT_MCP_URL') || '';
+    const mcpUrl  = process.env.NEXT_PUBLIC_MCP_URL || localStorage.getItem('JIRAPILOT_MCP_URL') || 'http://localhost:3001';
     const token   = localStorage.getItem('JIRAPILOT_JIRA_TOKEN') || '';
     const email   = localStorage.getItem('JIRAPILOT_JIRA_EMAIL') || '';
     if (!mcpUrl || !token) return;
@@ -1042,12 +1044,16 @@ function SettingsBody({ onSave, onTest }) {
   }
 
   async function handleTest() {
-    const mcpUrl  = values['JIRAPILOT_MCP_URL'];
+    const mcpUrl  = values['JIRAPILOT_MCP_URL'] || process.env.NEXT_PUBLIC_MCP_URL || 'http://localhost:3001';
     const token   = values['JIRAPILOT_JIRA_TOKEN'];
     const email   = values['JIRAPILOT_JIRA_EMAIL'];
     const orKey   = values['JIRAPILOT_OPENROUTER_KEY'];
-    if (!mcpUrl || !token || !orKey) {
-      setTestResult({ jira: 'err', jiraMsg: 'Fill MCP URL + Jira token first', openrouter: 'err', openrouterMsg: 'Fill OpenRouter key first' });
+    if (!token || !orKey) {
+      setTestResult({ jira: 'err', jiraMsg: 'Fill in Jira token first', openrouter: 'err', openrouterMsg: 'Fill in OpenRouter key first' });
+      return;
+    }
+    if (!mcpUrl) {
+      setTestResult({ jira: 'err', jiraMsg: 'MCP server URL not set', openrouter: 'err', openrouterMsg: '' });
       return;
     }
     setTesting(true);
@@ -1079,6 +1085,18 @@ function SettingsBody({ onSave, onTest }) {
       <p style={{ color: 'var(--ink-60)', fontSize: 13.5, margin: '0 0 28px', maxWidth: 560 }}>
         Pilot stores these in your browser. They never touch a backend.
       </p>
+
+      {process.env.NEXT_PUBLIC_MCP_URL && (
+        <div style={{
+          marginBottom: 16, padding: '10px 14px',
+          background: 'var(--bg-raised)', border: '1px solid var(--border)',
+          borderRadius: 'var(--r-md)', fontSize: 12.5, color: 'var(--ink-82)',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <I.Link size={13} />
+          <span>MCP server: <code className="mono" style={{ background: 'var(--ink-08)', padding: '1px 5px', borderRadius: 3 }}>{process.env.NEXT_PUBLIC_MCP_URL}</code></span>
+        </div>
+      )}
 
       <div style={{
         border: '1px solid var(--border)',

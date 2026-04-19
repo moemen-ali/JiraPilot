@@ -25,7 +25,7 @@ export function useAgentRunner() {
     const jiraToken  = localStorage.getItem('JIRAPILOT_JIRA_TOKEN');
     const jiraEmail  = localStorage.getItem('JIRAPILOT_JIRA_EMAIL');
     const orKey      = localStorage.getItem('JIRAPILOT_OPENROUTER_KEY');
-    const mcpUrl     = localStorage.getItem('JIRAPILOT_MCP_URL');
+    const mcpUrl     = process.env.NEXT_PUBLIC_MCP_URL || localStorage.getItem('JIRAPILOT_MCP_URL') || 'http://localhost:3001';
     const model      = localStorage.getItem('JIRAPILOT_MODEL') || 'qwen/qwen3-coder:free';
 
     if (!jiraToken) {
