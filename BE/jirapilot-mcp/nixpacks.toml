@@ -1,0 +1,7 @@
+{
+  "providers": ["node"],
+  "buildCommand": "npm run build",
+  "startCommand": "node dist/main",
+  "installCommand": "npm ci",
+  "nodeVersion": "20"
+}
